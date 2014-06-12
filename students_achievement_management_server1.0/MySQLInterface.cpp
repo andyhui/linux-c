@@ -4,8 +4,8 @@
 #include "MySQLInterface.h"
 
 using namespace std;
- 
- 
+
+
 //构造函数 初始化各个变量和数据
 MySQLInterface::MySQLInterface():
     errorNum(0),errorInfo("ok")
@@ -14,12 +14,12 @@ MySQLInterface::MySQLInterface():
     mysql_init(&mysqlInstance);
     mysql_options(&mysqlInstance,MYSQL_SET_CHARSET_NAME,"gbk");
 }
- 
+
 MySQLInterface::~MySQLInterface()
 {
- 
+
 }
- 
+
 //连接MySQL
 bool MySQLInterface::connectMySQL(char* server, char* username, char* password, char* database,int port)
 {
@@ -42,7 +42,7 @@ bool MySQLInterface::createDatabase(std::string& dbname)
         {
             return true;
         }
-         
+
     }
     errorIntoMySQL();
     return false;
@@ -57,7 +57,7 @@ bool MySQLInterface::createdbTable(const std::string& query)
     errorIntoMySQL();
     return false;
 }
- 
+
 //写入数据
 bool MySQLInterface::writeDataToDB(string queryStr)
 {
@@ -65,7 +65,7 @@ bool MySQLInterface::writeDataToDB(string queryStr)
         return true;
     else
         errorIntoMySQL();
-    return false;   
+    return false;
 }
 //读取数据
 bool MySQLInterface::getDatafromDB(string queryStr, std::vector<std::vector<std::string> >& data)
@@ -75,19 +75,19 @@ bool MySQLInterface::getDatafromDB(string queryStr, std::vector<std::vector<std:
         errorIntoMySQL();
         return false;
     }
- 
+
     result=mysql_store_result(&mysqlInstance);
- 
+
     int row=mysql_num_rows(result);
     int field=mysql_num_fields(result);
- 
+
     MYSQL_ROW line=NULL;
     line=mysql_fetch_row(result);
- 
+
     int j=0;
     std::string temp;
     while(NULL!=line)
-    {   
+    {
         std::vector<std::string> linedata;
         for(int i=0; i<field;i++)
         {
@@ -107,14 +107,14 @@ bool MySQLInterface::getDatafromDB(string queryStr, std::vector<std::vector<std:
     }
     return true;
 }
- 
+
 //错误信息
 void MySQLInterface::errorIntoMySQL()
 {
     errorNum=mysql_errno(&mysqlInstance);
     errorInfo=mysql_error(&mysqlInstance);
 }
- 
+
 //断开连接
 void MySQLInterface::closeMySQL()
 {

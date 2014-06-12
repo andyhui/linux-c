@@ -1,11 +1,14 @@
 #include <iostream>
+#include <stdio.h>
+#include <string.h>
 #include "teacher.h"
-#include "mysql.h"
-#include "sql_api.h"
+#include <mysql.h>
+//#include "sql_api.h"
 
 using namespace std;
 
-const char* database = "CourseSystem";
+//const char* database = "CourseSystem";
+MYSQL* database;
 const int MAXLEN = 1024;
 
 void teacher::view_courses(int class_id)
@@ -14,7 +17,7 @@ void teacher::view_courses(int class_id)
 	char buf[MAXLEN] = {0};
 	int res = 0;
 	MYSQL_RES* resPtr;
-	sprintf(buf,"selec * from student where id = %s\n", class_id);
+	sprintf(buf,"selec * from student where id = %d\n", class_id);
 	res = mysql_query(database,buf);
 	if(res == 0)
 	{
@@ -28,7 +31,7 @@ bool teacher::arrange_homework(int homework_id,char* name ,char* time, int cid)
 	/*安排课后作业,写作业id，课程号，布置时间*/
 	char buf[MAXLEN] = {0};
 	int res = 0;
-	sprintf(buf,"select * from home homework where id = %s and cid = %s\n", homework_id,cid);
+	sprintf(buf,"select * from home homework where id = %d and cid = %d\n", homework_id,cid);
 	res = mysql_query(database,buf);
 	if(res == 0)
 	{
@@ -38,7 +41,7 @@ bool teacher::arrange_homework(int homework_id,char* name ,char* time, int cid)
 	else
 	{
 		memset(buf,'\0',MAXLEN);
-		sprintf(buf,"insert into homework values (%s,%s,%s,%s)\n", homework_id,name,time,cid);
+		sprintf(buf,"insert into homework values (%d,%s,%s,%d)\n", homework_id,name,time,cid);
 		res = mysql_query(database,buf);
 		if(res == 0)
 		{
@@ -56,7 +59,7 @@ bool teacher::get_points(int student_id,int homework_id,int score)
 	/*学生成绩录入,给一个学生的某个作业打个分数*/
 	char buf[MAXLEN] = {0};
 	int res = 0;
-	sprintf(buf,"select * from home do_homework where sid = %s and hid = %s\n", student_id,homework_id);
+	sprintf(buf,"select * from home do_homework where sid = %d and hid = %d\n", student_id,homework_id);
 	res = mysql_query(database,buf);
 	if(res == 0)
 	{
@@ -66,7 +69,7 @@ bool teacher::get_points(int student_id,int homework_id,int score)
 	else
 	{
 		memset(buf,'\0',MAXLEN);
-		sprintf(buf,"insert into do_homework values (%s,%s,%s)\n", student_id,homework_id,score);
+		sprintf(buf,"insert into do_homework values (%d,%d,%d)\n", student_id,homework_id,score);
 		res = mysql_query(database,buf);
 		if(res == 0)
 		{

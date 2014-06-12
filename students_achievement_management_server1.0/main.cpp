@@ -14,7 +14,7 @@ int main()
     administrator ad_1(20,"wangfang");
     MySQLInterface sql;
     MYSQL mysql_instance;
-    sql.connectMySQL(&mysql_instance,NULL,"root","root","database",0);
+    sql.connectMySQL("localhost","root","root","database",0);
     int a_id = ad_1.get_admin_id();
     ad_1.arrange_homework(1);
     printf("hello world!\n");

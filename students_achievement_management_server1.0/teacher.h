@@ -17,7 +17,7 @@ t_sec):teacher_id(t_id),teacher_name(t_name),teacher_sec(t_sec){}
 
 public:
 	void view_courses(int class_id);
-	void arrange_homework(int homework_id,char* name,char* time,int cid);
+	bool arrange_homework(int homework_id,char* name,char* time,int cid);
 	bool get_points(int student_id,int homework_id,int score);
 	
 };
