@@ -1,0 +1,17 @@
+error: Your local changes to the following files would be overwritten by merge:
+        protected/config/main.php
+Please, commit your changes or stash them before you can merge.
+
+如果希望保留服务器上的改动，仅仅并入新配置项，处理方式如下：
+git stash
+git pull
+git stash pop
+
+然后可以使用git diff -w +文件名来确认代码自动合并的情况
+
+反过来如果想用代码库来覆盖本地代码中的代码，可以使用一下命令：
+git reset --hard
+git pull
+
+其中的git reset是针对版本，如果想针对文件回退本地修改，可使用
+git checkout HEAD file/to/restore
