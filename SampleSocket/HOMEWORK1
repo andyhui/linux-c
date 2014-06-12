@@ -1,0 +1,35 @@
+first use TCP to implement a network throughput measuring program. 
+(then replace TCP with UDP to do the same task)
+
+Suppose IP1 and IP2 are synchronized in clock, for example,
+both are using NTP protocol to synchornize their clocks to the online
+timing sources.
+
+                    IP1                         IP2
+send a large file    |\__________>_____________  |
+>10G bytes.  Prefixed|                         \ |
+by the clock value of|                          \| 
+IP1 when the 1st byte|                           | when the final byte is received,
+is sent out.         |                           | get the clock value of IP2,
+                     |                           | calculate the throughput.
+                     |                           |
+
+Whenever sending a message, the sender prefixes the message length (in bytes)
+to the message.   The message length field is of a fixed standard length
+(e.g., 4-byte.  Let's use 4-byte as our standard).
+
+      +----------------+------------------------------------------+
+      | message length |   sender's message                       |
+      | (4 bytes)      |(message length says its length in bytes) |
+      +----------------+------------------------------------------+
+
+(Be careful of Endian problem)
+The message (including the prefixed message length field) must be in
+the canonical byte order. I.e.,
+         0x(msb)12345678(lsb) (32-bit) stores as
+         0x78 0x56 0x34 0x12 in the sent-out packet.
+             e.g., long y = 0x12345678
+                put y & 0xff in the byte[0]
+                    (y & 0xff00) >> 8 in the byte [1]
+                    (y & 0xff0000) >> 16 in the byte [2]
+                    (y & 0xff000000) >> 24 in the byte [3]
