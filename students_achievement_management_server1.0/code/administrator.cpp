@@ -15,7 +15,6 @@
 #include <string.h>
 #include <mysql.h>
 #include "administrator.h"
-#include "jwsmtp/jwsmtp.h"
 
 using namespace std;
 MYSQL* database;
@@ -44,7 +43,7 @@ void administrator::del_teacher(int teacher_id)
    command = strtok(buf,"\n");
    res = mysql_query(database,command);
    resPtr = mysql_store_result(database);
-   if(resPtr->row_count == 0)
+   if(resPtr.row_count == 0)
    {
        cout << "没有这個老師" << endl;
    }
@@ -68,10 +67,10 @@ bool administrator::add_teacher(int teacher_id,char* name,char*
 	int res = 0;
 	MYSQL_RES* resPtr;
 	sprintf(buf,"select * from teacher where id = %d\n", teacher_id);
-	command = strtok(buf,"\n");
+	commad = strtok(buf,"\n");
 	res = mysql_query(database,command);
 	resPtr = mysql_store_result(database);
-	if(resPtr->row_count != 0)
+	if(resPtr.row_count != 0)
 	{
 		printf("老師已經存在\n");
 		return false;
@@ -79,9 +78,10 @@ bool administrator::add_teacher(int teacher_id,char* name,char*
 	else
 	{
 		memset(buf,'\0',MAXLEN);
-		sprintf(buf,"insert into teacher values \
-(%d,%s,%s,%s,%s,%s,%s)\n",teacher_id,name,teacher_sex,teacher_phone,teacher_title,teacher_department,birthday);
-		command = strtok(buf,"\n");
+		sprintf(buf,"insert into course values
+				(%d,%s,%s,%s,%s,%s,%s)\n",
+				course_id,name,teacher_sex,teacher_phone,teacher_title,teacher_deparment,birthday);
+		commad = strtok(buf,"\n");
 		res = mysql_query(database,command);
 		//resPtr = mysql_store_result(); 
 		if(res == 0)
@@ -104,18 +104,18 @@ void administrator::del_student(int student_id)
    char* command;
    int res = 0;
    MYSQL_RES* resPtr;
-   sprintf(buf,"select * from student where id = %d\n",student_id);
+   sprintf(buf,"select * from student where id = %d\n",course_id);
    command = strtok(buf,"\n");
    res = mysql_query(database,command);
    resPtr = mysql_store_result(database);
-   if(resPtr->row_count == 0)
+   if(resPtr.row_count == 0)
    {
        cout << "沒有這個學生" << endl;
    }
    else
    {
       memset(buf,'\0',MAXLEN);
-      sprintf(buf,"delete * from student where id = %d\n",student_id);
+      sprintf(buf,"delete * from student where id = %d\n",course_id);
       command = strtok(buf,"\n");
       res = mysql_query(database,command);
    }
@@ -129,11 +129,11 @@ bool administrator::add_student(int student_id,char* name,char* student_sex,char
 	char* command;
 	int res = 0;
 	MYSQL_RES* resPtr;
-	sprintf(buf,"select * from student where id = %d\n", student_id);
-	command = strtok(buf,"\n");
+	sprintf(buf,"select * from student where id = %d\n", course_id);
+	commad = strtok(buf,"\n");
 	res = mysql_query(database,command);
 	resPtr = mysql_store_result(database);
-	if(resPtr->row_count != 0)
+	if(resPtr.row_count != 0)
 	{
 		printf("這個學生已經存在\n");
 		return false;
@@ -142,7 +142,7 @@ bool administrator::add_student(int student_id,char* name,char* student_sex,char
 	{
 		memset(buf,'\0',MAXLEN);
 		sprintf(buf,"insert into student values (%d,%s,%s,%s,%s)\n", student_id,name,student_sex,student_class,student_birthday);
-		command = strtok(buf,"\n");
+		commad = strtok(buf,"\n");
 		res = mysql_query(database,command);
 		//resPtr = mysql_store_result(); 
 		if(res == 0)
@@ -169,7 +169,7 @@ void administrator::del_course(int course_id)
    command = strtok(buf,"\n");
    res = mysql_query(database,command);
    resPtr = mysql_store_result(database);
-   if(resPtr->row_count == 0)
+   if(resPtr.row_count == 0)
    {
        cout << "没有这个课程" << endl;
    }
@@ -191,10 +191,10 @@ bool administrator::add_course(int course_id,char* name,int credit,int course_ho
 	int res = 0;
 	MYSQL_RES* resPtr;
 	sprintf(buf,"select * from course where id = %d\n", course_id);
-	command = strtok(buf,"\n");
+	commad = strtok(buf,"\n");
 	res = mysql_query(database,command);
 	resPtr = mysql_store_result(database);
-	if(resPtr->row_count != 0)
+	if(resPtr.row_count != 0)
 	{
 		printf("the homework is exist\n");
 		return false;
@@ -203,7 +203,7 @@ bool administrator::add_course(int course_id,char* name,int credit,int course_ho
 	{
 		memset(buf,'\0',MAXLEN);
 		sprintf(buf,"insert into course values (%d,%s,%d,%d,%d,%s)\n", course_id,name,credit,course_hours,tid,course_type);
-		command = strtok(buf,"\n");
+		commad = strtok(buf,"\n");
 		res = mysql_query(database,command);
 		//resPtr = mysql_store_result(); 
 		if(res == 0)
@@ -229,10 +229,10 @@ bool administrator::update_course(int course_id,char* name,int credit,int course
 
 	MYSQL_RES* resPtr;
 	sprintf(buf,"select * from course where id = %d\n", course_id);
-	command = strtok(buf,"\n");
+	commad = strtok(buf,"\n");
 	res = mysql_query(database,command);
 	resPtr = mysql_store_result(database);
-	if(resPtr->row_count == 0)
+	if(resPtr.row_count == 0)
 	{
 		printf("the course is not exist\n");
 		return false;
@@ -240,8 +240,11 @@ bool administrator::update_course(int course_id,char* name,int credit,int course
 	else
 	{
 		memset(buf,'\0',MAXLEN);
-		sprintf(buf,"UPDATE course SET course_hours = %d,name = %s,credit = %d,course_hours = %d,t_id = %d,course_type = %s where id =	%d\n",course_hours,name,credit,course_hours,t_id,course_type,course_id);
-		command = strtok(buf,"\n");
+		sprintf(buf,"UPDATE course SET course_hours = %d,name =
+				%s,credit = %s,course_hours = %d,t_id =
+				%d,course_type = %s where id =
+				%d\n",course_hours,name,credit,course_hours,t_id,course_type,course_id);
+		commad = strtok(buf,"\n");
 		res = mysql_query(database,command);
 		if(res == 0)
 		{
@@ -283,12 +286,7 @@ bool email_notice(char* to_email_address,char* from_email_address,char* passwd,c
 	m.password(passwd);
 	m.send();
 	cout << m.response() << endl;
-        char* command;
-        char t[200];
-        memset(t,0,200);
-        strcpy(t,m.response().c_str());
-        command = strtok(t," ");
-	if(strcmp(command,"250") == 0)
+	if(strcmp(stock(m.response()," "),"250") == 0)
 	{
 		cout <<"email send ok" << endl;
 		return true;

@@ -8,7 +8,7 @@
 using namespace std;
 
 //const char* database = "CourseSystem";
-static MYSQL* database;
+MYSQL* database;
 const int MAXLEN = 1024;
 
 MYSQL_RES* teacher::view_courses(int class_id)
@@ -35,10 +35,10 @@ bool teacher::arrange_homework(int homework_id,char* name ,char* time, int cid)
 	int res = 0;
         MYSQL_RES* resPtr;
 	sprintf(buf,"select * from home homework where id = %d and cid = %d\n", homework_id,cid);
-        command = strtok(buf,"\n");
+        commad = strtok(buf,"\n");
 	res = mysql_query(database,command);
         resPtr = mysql_store_result(database);
-	if(resPtr->row_count != 0)
+	if(resPtr.row_count != 0)
 	{
 		printf("the homework is exist\n");
 		return false;
@@ -71,7 +71,7 @@ bool teacher::get_points(int student_id,int homework_id,int score)
         command = strtok(buf,"\n");
 	res = mysql_query(database,command);
         resPtr = mysql_store_result(database);
-	if(resPtr->row_count == 0)
+	if(resPtr.row_count == 0)
 	{
 		printf("the students's homework is not in the table\n");
 		return false;
