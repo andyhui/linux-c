@@ -8,11 +8,15 @@ class teacher
 public:
 	int teacher_id;
 	string teacher_name;
-	int teacher_sec;
+	string teacher_sex;
+        string phone;
+        string title;
+        string department;
+        string birthday;
 
 	teacher();
-	teacher(int t_id,string t_name,int
-t_sec):teacher_id(t_id),teacher_name(t_name),teacher_sec(t_sec){}
+	teacher(int t_id,string t_name,string
+t_sex,string t_phone,string t_title,string t_department,string t_birthdary):teacher_id(t_id),teacher_name(t_name),teacher_sec(t_sec),phone(t_phone),title(t_title),department(t_department),birthday(t_birthday){}
 	~teacher(){}
 
 public:
