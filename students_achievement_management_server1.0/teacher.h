@@ -1,3 +1,5 @@
+#ifndef _TEACHER_H_
+#define _TEACHER_H_
 #include <iostream>
 #include <mysql.h>
 using namespace std;
@@ -26,3 +28,5 @@ public:
 	bool get_points(int student_id,int homework_id,int score);
 	
 };
+
+#endif

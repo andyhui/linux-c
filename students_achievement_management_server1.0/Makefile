@@ -9,7 +9,7 @@ LIBS=-lmysqlclient /usr/local/lib/libjwsmtp.a
 
 all:server
 
-server: main.o administrator.o teacher.o student.o
+server: main.o administrator.o teacher.o student.o RegAndLog.o
 	$(CXX) -o $@ $^ $(CPPFLAGS) $(LIBS)
 
 clean:

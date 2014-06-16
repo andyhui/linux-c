@@ -1,3 +1,5 @@
+#ifndef _ADMIN_H_
+#define _ADMIN_H_
 #include <iostream>
 
 using namespace std;
@@ -33,3 +35,5 @@ public:
 
    int get_admin_id();
 };
+
+#endif
