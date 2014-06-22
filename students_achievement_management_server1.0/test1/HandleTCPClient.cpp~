@@ -1,0 +1,1158 @@
+#include <stdio.h>      
+#include <sys/socket.h> 
+#include <unistd.h>
+#include <stdlib.h>
+#include <string.h>
+#include <mysql/mysql.h>
+//#include "RegAndLog.h"
+#include "administrator.h"
+#include "teacher.h"
+#include "student.h"
+#include "jwsmtp/jwsmtp.h"
+
+//#include <iostream>
+#include <sys/types.h>
+#include <regex.h>
+
+
+#define BUFLEN 256
+
+using namespace std;
+#define RCVBUFSIZE 2048   
+#define size 100
+void DieWithError(const char *errorMessage);
+
+/*邮件通知函数*/
+static bool email_notice(const char* to_email_address,const char* from_email_address,const char* passwd,const char* subject,const char* message,const char* email_server)
+{
+	jwsmtp::mailer m(to_email_address,from_email_address,subject,message,email_server,jwsmtp::mailer::SMTP_PORT,false); 
+	m.username(from_email_address); 
+	m.password(passwd);
+	m.send();
+	cout << m.response() << endl;
+        char* command;
+        char t[200];
+        memset(t,0,200);
+        strcpy(t,m.response().c_str());
+        command = strtok(t," ");
+	if(strcmp(command,"250") == 0)
+	{
+		cout <<"email send ok" << endl;
+		return true;
+	}
+	else
+	{
+		cout << "email send error ,please check your setting" << endl;
+		return false;
+	}
+}
+
+int RegisterAccount(MYSQL* mysql, int id, const char* mailAddr,
+                    const char* passwd, int permission)
+{
+    size_t nmatch = 1;
+    regmatch_t pmatch[1];
+    const char* pattern1 =
+                "^\\w+([-+.]\\w+)*@\\w+([-.]\\w+)*\\.\\w+([-.]\\w+)*{,60}$";
+    const char* pattern2 = "^\\w{6,16}$";
+    regex_t mailAddrReg, passwdReg;
+    char buf[BUFLEN] = {0};
+    char* command = NULL;
+    MYSQL_RES* resPtr;
+    MYSQL_ROW resRow;
+
+    regcomp(&mailAddrReg, pattern1, REG_EXTENDED);
+    regcomp(&passwdReg, pattern2, REG_EXTENDED);
+
+    if (REG_NOMATCH == regexec(&mailAddrReg, mailAddr, nmatch, pmatch, 0) ||
+        REG_NOMATCH == regexec(&passwdReg, passwd, nmatch, pmatch, 0))
+    {
+        cout<<"请正确填写邮箱地址和密码\n"<<endl;
+        regfree(&mailAddrReg);
+        regfree(&passwdReg);
+        return 1;
+    }
+    else
+    {
+        mysql_init(mysql);
+
+        // 管理员
+        if (permission == 1)
+        {
+            mysql_real_connect(mysql, "localhost", "admin", "admin123",
+                                    "course_system", 0, NULL, 0);
+        }
+        // 教师
+        else if (permission == 2)
+        {
+            mysql_real_connect(mysql, "localhost", "teacher", "teacher123",
+                                    "course_system", 0, NULL, 0);
+        }
+        // 学生
+        else
+        {
+            mysql_real_connect(mysql, "localhost", "student", "student123",
+                                    "course_system", 0, NULL, 0);
+        }
+
+        sprintf(buf, "select mailaddr from registerinfo where id=%d\n", id);
+        command = strtok(buf, "\n");
+        mysql_query(mysql, command);
+
+        resPtr = mysql_store_result(mysql);
+        if (mysql_num_rows(resPtr) == 0)
+        {
+            cout<<"没有你的信息，请咨询管理处\n"<<endl;
+            mysql_free_result(resPtr);
+            mysql_close(mysql);
+            regfree(&mailAddrReg);
+            regfree(&passwdReg);
+            return 1;
+        }
+        else
+        {
+            resRow = mysql_fetch_row(resPtr);
+            if (resRow[0] != NULL)
+            {
+                cout<<"邮箱已被注册\n"<<endl;
+                mysql_free_result(resPtr);
+                mysql_close(mysql);
+                regfree(&mailAddrReg);
+                regfree(&passwdReg);
+                return 1;
+            }
+            else
+            {
+                memset(buf, 0, BUFLEN);
+                sprintf(buf,
+          "update registerinfo set mailaddr='%s', passwd='%s' where id=%d\n",
+                        mailAddr, passwd, id);
+                command = strtok(buf, "\n");
+                mysql_query(mysql, command);
+            }
+        }
+    }
+    mysql_free_result(resPtr);
+    mysql_close(mysql);
+    regfree(&mailAddrReg);
+    regfree(&passwdReg);
+
+    return 0;
+}
+
+
+// 如login成功则必须logout
+int Login(MYSQL* mysql, int id, const char* passwd, int permission)
+{
+    printf("=====in======\n");
+    size_t nmatch = 1;
+    regmatch_t pmatch[1];
+    const char* pattern = "^\\w{6,16}$";
+    regex_t passwdReg;
+    char buf[BUFLEN] = {0};
+    char* command = NULL;
+    MYSQL_RES* resPtr;
+    MYSQL_ROW resRow;
+
+    regcomp(&passwdReg, pattern, REG_EXTENDED);
+
+    if (REG_NOMATCH == regexec(&passwdReg, passwd, nmatch, pmatch, 0))
+    {
+        cout<<"用户名或密码错误，格式不对\n"<<endl;
+        regfree(&passwdReg);
+        return 1;
+    }
+    else
+    {
+        mysql_init(mysql);
+
+        char value = 1;
+        mysql_options(mysql, MYSQL_OPT_RECONNECT, &value);
+
+        // 管理员
+        if (permission == 1)
+        {
+            mysql_real_connect(mysql, "localhost", "admin", "admin123",
+                                    "course_system", 0, NULL, 0);
+        }
+        // 教师
+        else if (permission == 2)
+        {
+            mysql_real_connect(mysql, "localhost", "teacher", "teacher123",
+                                    "course_system", 0, NULL, 0);
+        }
+        // 学生
+        else
+        {
+            mysql_real_connect(mysql, "localhost", "student", "student123",
+                                    "course_system", 0, NULL, 0);
+        }
+
+
+        sprintf(buf, "select passwd from registerinfo where id=%d\n", id);
+        command = strtok(buf, "\n");
+        mysql_query(mysql, command);
+
+            printf("after real connect\n");
+        resPtr = mysql_store_result(mysql);
+        
+        if (mysql_num_rows(resPtr) == 0)
+        {
+            cout<<"用户名或密码错误，查无信息\n"<<endl;
+            mysql_free_result(resPtr);
+            mysql_close(mysql);
+            regfree(&passwdReg);
+            return 1;
+        }
+        else
+        {
+            resRow = mysql_fetch_row(resPtr);
+            if (resRow[0] == NULL)
+            {
+                cout<<"用户名或密码错误\n"<<endl;
+                mysql_free_result(resPtr);
+                mysql_close(mysql);
+                regfree(&passwdReg);
+                return 1;
+            }
+            else
+            {
+                if (strcmp(passwd, resRow[0]) != 0)
+                {
+                    cout<<"用户名或密码错误\n"<<endl;
+                    mysql_free_result(resPtr);
+                    mysql_close(mysql);
+                    regfree(&passwdReg);
+                    return 1;
+                }
+            }
+        }
+    }
+    mysql_free_result(resPtr);
+    regfree(&passwdReg);
+
+    return 0;
+}
+
+int ChangeMailAddr(MYSQL* mysql, int id, const char* mailAddr)
+{
+    size_t nmatch = 1;
+    regmatch_t pmatch[1];
+    const char* pattern =
+                "^\\w+([-+.]\\w+)*@\\w+([-.]\\w+)*\\.\\w+([-.]\\w+)*{,60}$";
+    regex_t mailAddrReg;
+    char buf[BUFLEN] = {0};
+    char* command = NULL;
+    MYSQL_RES* resPtr;
+
+    regcomp(&mailAddrReg, pattern, REG_EXTENDED);
+
+    if (REG_NOMATCH == regexec(&mailAddrReg, mailAddr, nmatch, pmatch, 0))
+    {
+        cout<<"邮箱地址格式错误\n"<<endl;
+        regfree(&mailAddrReg);
+        return 1;
+    }
+    else
+    {
+        sprintf(buf,
+                "update registerinfo set mailaddr='%s' where id=%d\n",
+                mailAddr, id);
+        command = strtok(buf, "\n");
+        mysql_query(mysql, command);
+        
+        const char* from_email_address = "l_huiwu@126.com";
+	    const char* to_email_address = "15851872183@163.com";
+        const char* passwd = "zxc639784368";
+        const char* subject = "test";
+        const char* message = "select course ok!";
+        const char* email_server = "smtp.126.com";
+			    
+        email_notice(to_email_address,from_email_address,passwd,
+        subject,message,email_server);
+
+    }
+
+    regfree(&mailAddrReg);
+
+    return 0;
+}
+
+int ChangePasswd(MYSQL* mysql, int id, const char* passwd)
+{
+    size_t nmatch = 1;
+    regmatch_t pmatch[1];
+    const char* pattern = "^\\w{6,16}$";
+    regex_t passwdReg;
+    char buf[BUFLEN] = {0};
+    char* command = NULL;
+    MYSQL_RES* resPtr;
+
+    regcomp(&passwdReg, pattern, REG_EXTENDED);
+
+    if (REG_NOMATCH == regexec(&passwdReg, passwd, nmatch, pmatch, 0))
+    {
+        cout<<"密码格式错误\n"<<endl;
+        regfree(&passwdReg);
+        return 1;
+    }
+    else
+    {
+        sprintf(buf,
+                "update registerinfo set passwd='%s' where id=%d\n",
+                passwd, id);
+        command = strtok(buf, "\n");
+        mysql_query(mysql, command);
+    }
+
+    regfree(&passwdReg);
+
+    return 0;
+}
+
+int AddUserInfo(MYSQL* mysql, int id)
+{
+    char buf[BUFLEN] = {0};
+    char* command = NULL;
+    MYSQL_RES* resPtr;
+
+    sprintf(buf, "select * from registerinfo where id=%d\n", id);
+    command = strtok(buf, "\n");
+    mysql_query(mysql, command);
+
+    resPtr = mysql_store_result(mysql);
+    if (mysql_num_rows(resPtr) == 0)
+    {
+        memset(buf, 0, BUFLEN);
+        sprintf(buf, "insert into registerinfo (id) values (%d)\n", id);
+        command = strtok(buf, "\n");
+        mysql_query(mysql, command);
+    }
+    else
+    {
+        cout<<"此用户信息已添加\n"<<endl;
+        mysql_free_result(resPtr);
+        return 1;
+    }
+
+    mysql_free_result(resPtr);
+
+    return 0;
+}
+
+int DeleteUserInfo(MYSQL* mysql, int id)
+{
+    char buf[BUFLEN] = {0};
+    char* command = NULL;
+    MYSQL_RES* resPtr;
+
+    sprintf(buf, "select * from registerinfo where id=%d\n", id);
+    command = strtok(buf, "\n");
+    mysql_query(mysql, command);
+
+    resPtr = mysql_store_result(mysql);
+    if (mysql_num_rows(resPtr) == 0)
+    {
+        cout<<"查无此用户信息\n"<<endl;
+        mysql_free_result(resPtr);
+        return 1;
+    }
+    else
+    {
+        memset(buf, 0, BUFLEN);
+        sprintf(buf, "delete from registerinfo where id=%d\n", id);
+        command = strtok(buf, "\n");
+        mysql_query(mysql, command);
+    }
+
+    mysql_free_result(resPtr);
+
+    return 0;
+}
+
+
+void Logout(MYSQL* mysql)
+{
+    mysql_close(mysql);
+}
+
+
+
+void HandleTeacher(MYSQL* mysql, int clntSocket, teacher teacher1)
+{
+    char echoBuffer[RCVBUFSIZE];        
+    int recvMsgSize;
+    for(;;)
+    {
+        memset(echoBuffer, 0, RCVBUFSIZE);
+        if ((recvMsgSize = recv(clntSocket, echoBuffer, RCVBUFSIZE, 0)) < 0)
+            DieWithError("recv() failed");
+        if (echoBuffer[2]==1)//老师布置作业
+		{
+		    char name[size];
+		    char time[size];
+		    int cid;
+		    
+		    memcpy(name, echoBuffer+3, size);
+		    memcpy(time, echoBuffer+size+3, size);
+		    memcpy(&cid, echoBuffer+(2*size)+3, sizeof(cid));
+		    
+		    cout <<name<<cid<<endl;
+		    teacher1.arrange_homework(mysql, name, time, cid);
+			if(teacher1.arrange_homework(mysql, name, time, cid))
+			{
+				memset(echoBuffer, 0, RCVBUFSIZE);				
+           	    echoBuffer[0] = 1;
+           	    cout << "hello 1 " << endl;
+           	    if (send(clntSocket, echoBuffer, RCVBUFSIZE, 0) != RCVBUFSIZE)
+           	 	    DieWithError("send() failed");	    
+			}
+			else
+			{
+				memset(echoBuffer, 0, RCVBUFSIZE);	
+           	    echoBuffer[0] = 0;
+           	    cout << "hello 2 " << endl;
+           	    if (send(clntSocket, echoBuffer, RCVBUFSIZE, 0) != RCVBUFSIZE)
+           	 	    DieWithError("send() failed");		
+			}
+		}
+
+		else if (echoBuffer[2]==2)//老师打分
+		{
+		    int sid;
+		    int hid;
+		    int score;
+		    
+		    memcpy(&sid, echoBuffer+3, 4);
+		    memcpy(&hid, echoBuffer+7, 4);
+		    memcpy(&score, echoBuffer+11, 4);
+		    
+			if(teacher1.get_points(mysql, sid, hid, score))
+			{
+				memset(echoBuffer, 0, RCVBUFSIZE);				
+           	    echoBuffer[0] = 1;
+           	    if (send(clntSocket, echoBuffer, RCVBUFSIZE, 0) != RCVBUFSIZE)
+           	 	    DieWithError("send() failed");	    
+			}
+			else
+			{
+				memset(echoBuffer, 0, RCVBUFSIZE);	
+           	    echoBuffer[0] = 0;
+           	    if (send(clntSocket, echoBuffer, RCVBUFSIZE, 0) != RCVBUFSIZE)
+           	 	    DieWithError("send() failed");		
+			}	
+		}
+		else if (echoBuffer[2]==3)//老师查看选此课程学生情况
+		{
+
+		    int cid;
+            MYSQL_RES* resPtr;
+			memcpy(&cid, echoBuffer+3, sizeof(cid));
+
+    		resPtr = teacher1.view_courses(mysql, cid);
+    		if (resPtr)
+    		{
+        		if(resPtr->row_count == 0)
+        		{
+					memset(echoBuffer, 0, RCVBUFSIZE);				
+           	    	echoBuffer[0] = 1;
+           	    	if (send(clntSocket, echoBuffer, RCVBUFSIZE, 0) != RCVBUFSIZE)
+           	 	    	DieWithError("send() failed");	
+        		}
+        	    else
+        	    {
+                    memset(echoBuffer, 0, RCVBUFSIZE);	
+           	        echoBuffer[0] = 0;
+            	    MYSQL_ROW row;
+            	    int i;
+            	    int numrow = mysql_num_rows(resPtr);
+            	    int numcolumn = mysql_field_count(mysql);
+            	    echoBuffer[1] = numrow;
+            	    echoBuffer[2] = numcolumn;
+            	    if (send(clntSocket, echoBuffer, RCVBUFSIZE, 0) != RCVBUFSIZE)
+           	 	        DieWithError("send() failed");	
+           	 	    
+            	    while((row = mysql_fetch_row(resPtr)))
+            	    {
+                	    for(i = 0; i < numcolumn; i++)
+                	    {
+                    	    memcpy(echoBuffer, row[i], size); 
+                    	    if (send(clntSocket, echoBuffer, RCVBUFSIZE, 0) != RCVBUFSIZE)
+           	 	                DieWithError("send() failed");	
+                	    }
+            	    }
+        	    }
+        	    mysql_free_result(resPtr);
+        	}
+		}
+
+		else if (echoBuffer[2]==4)//logout
+		{
+			Logout(mysql);
+			exit(0);
+		}
+
+		else if  (echoBuffer[2]==5)//更换email
+		{
+			char addr[size]={0};
+			memcpy(addr, echoBuffer+3, size);
+
+			if(ChangeMailAddr(mysql, teacher1.teacher_id, addr))//失败
+			{
+				memset(echoBuffer, 0, RCVBUFSIZE);				
+           	    echoBuffer[0] = 1;
+           	    if (send(clntSocket, echoBuffer, RCVBUFSIZE, 0) != RCVBUFSIZE)
+           	 	    DieWithError("send() failed");	    
+			}
+			else
+			{
+				memset(echoBuffer, 0, RCVBUFSIZE);	
+           	    echoBuffer[0] = 0;
+           	    if (send(clntSocket, echoBuffer, RCVBUFSIZE, 0) != RCVBUFSIZE)
+           	 	    DieWithError("send() failed");		
+			}
+			
+		}
+
+		else if  (echoBuffer[2]==6)//更换密码
+		{
+			char pw[size]={0};
+			memcpy(pw, echoBuffer+3, size);
+
+			if(ChangeMailAddr(mysql, teacher1.teacher_id, pw))//失败
+			{
+				memset(echoBuffer, 0, RCVBUFSIZE);				
+           	    echoBuffer[0] = 1;
+           	    if (send(clntSocket, echoBuffer, RCVBUFSIZE, 0) != RCVBUFSIZE)
+           	 	    DieWithError("send() failed");	    
+			}
+			else
+			{
+				memset(echoBuffer, 0, RCVBUFSIZE);	
+           	    echoBuffer[0] = 0;
+           	    if (send(clntSocket, echoBuffer, RCVBUFSIZE, 0) != RCVBUFSIZE)
+           	 	    DieWithError("send() failed");		
+			}
+			
+		}
+	}
+}
+
+void HandleStudent(MYSQL* mysql, int clntSocket, student stu)
+{
+    MYSQL_RES* resPtr;
+    char echoBuffer[RCVBUFSIZE];        
+    int recvMsgSize;
+    int sid = stu.student_id;
+    for(;;)
+    {
+        memset(echoBuffer, 0, RCVBUFSIZE);
+        if ((recvMsgSize = recv(clntSocket, echoBuffer, RCVBUFSIZE, 0)) < 0)
+            DieWithError("recv() failed");
+        if (echoBuffer[2]==1)//student_select_course
+		{
+		    int courseId;
+			memcpy(&courseId, &echoBuffer[3], sizeof(courseId));
+
+			if(stu.selectCourse(mysql, courseId, sid))//失败
+			{
+				memset(echoBuffer, 0, RCVBUFSIZE);				
+           	    echoBuffer[0] = 1;
+           	    if (send(clntSocket, echoBuffer, RCVBUFSIZE, 0) != RCVBUFSIZE)
+           	 	    DieWithError("send() failed");	    
+			}
+			else
+			{
+			    
+			    const char* from_email_address = "l_huiwu@126.com";
+			    const char* to_email_address = "15851872183@163.com";
+			    const char* passwd = "zxc639784368";
+			    const char* subject = "test";
+			    const char* message = "select course ok!";
+			    const char* email_server = "smtp.126.com";
+			    
+			    email_notice(to_email_address,from_email_address,passwd,
+			    subject,message,email_server);
+				memset(echoBuffer, 0, RCVBUFSIZE);	
+           	    echoBuffer[0] = 0;
+           	    if (send(clntSocket, echoBuffer, RCVBUFSIZE, 0) != RCVBUFSIZE)
+           	 	    DieWithError("send() failed");		
+			}
+
+		}
+
+		else if (echoBuffer[2]==2)//student_delete_course
+		{
+            int courseId;
+			memcpy(&courseId, &echoBuffer[3], sizeof(courseId));
+
+			if(stu.deleteCourse(mysql, courseId, sid))//失败
+			{
+				memset(echoBuffer, 0, RCVBUFSIZE);				
+           	    echoBuffer[0] = 1;
+           	    if (send(clntSocket, echoBuffer, RCVBUFSIZE, 0) != RCVBUFSIZE)
+           	 	    DieWithError("send() failed");	    
+			}
+			else//成功
+			{
+				memset(echoBuffer, 0, RCVBUFSIZE);	
+           	    echoBuffer[0] = 0;
+           	    if (send(clntSocket, echoBuffer, RCVBUFSIZE, 0) != RCVBUFSIZE)
+           	 	    DieWithError("send() failed");		
+			}
+
+		}
+		else if (echoBuffer[2]==3)//student_view_course
+		{
+    		resPtr = stu.veiwCourse(mysql);
+    		if (resPtr)
+    		{
+        		if(resPtr->row_count == 0)
+        		{
+					memset(echoBuffer, 0, RCVBUFSIZE);				
+           	    	echoBuffer[0] = 1;//失败
+           	    	if (send(clntSocket, echoBuffer, RCVBUFSIZE, 0) != RCVBUFSIZE)
+           	 	    	DieWithError("send() failed");	
+        		}
+        	    else
+        	    {
+                    memset(echoBuffer, 0, RCVBUFSIZE);	
+           	        echoBuffer[0] = 0;
+            	    MYSQL_ROW row;
+            	    int i;
+            	    int numrow = mysql_num_rows(resPtr);
+            	    int numcolumn = mysql_field_count(mysql);
+            	    echoBuffer[1] = numrow;
+            	    echoBuffer[2] = numcolumn;
+            	    if (send(clntSocket, echoBuffer, RCVBUFSIZE, 0) != RCVBUFSIZE)
+           	 	        DieWithError("send() failed");	
+           	 	    
+            	    while((row = mysql_fetch_row(resPtr)))
+            	    {
+                	    for(i = 0; i < numcolumn; i++)
+                	    {
+                	        printf("%s   ", row[i]);
+                    	    memcpy(echoBuffer, row[i], size); 
+                    	    if (send(clntSocket, echoBuffer, RCVBUFSIZE, 0) != RCVBUFSIZE)
+           	 	                DieWithError("send() failed");	
+                	    }
+                	    printf("\n");
+            	    }
+        	    }
+        	    mysql_free_result(resPtr);
+        	}
+		}
+		else if (echoBuffer[2]==4)//student_view_score
+		{
+    		resPtr = stu.queryScore(mysql, stu.student_id);//查看所有课程成绩
+    		if (resPtr)
+    		{
+        		if(resPtr->row_count == 0)
+        		{
+					memset(echoBuffer, 0, RCVBUFSIZE);				
+           	    	echoBuffer[0] = 1;//失败
+           	    	if (send(clntSocket, echoBuffer, RCVBUFSIZE, 0) != RCVBUFSIZE)
+           	 	    	DieWithError("send() failed");	
+        		}
+        		else
+        	    {
+                    memset(echoBuffer, 0, RCVBUFSIZE);	
+           	        echoBuffer[0] = 0;
+            	    MYSQL_ROW row;
+            	    int i;
+            	    int numrow = mysql_num_rows(resPtr);
+            	    int numcolumn = mysql_field_count(mysql);
+            	    echoBuffer[1] = numrow;
+            	    echoBuffer[2] = numcolumn;
+            	    if (send(clntSocket, echoBuffer, RCVBUFSIZE, 0) != RCVBUFSIZE)
+           	 	        DieWithError("send() failed");	
+           	 	    
+            	    while((row = mysql_fetch_row(resPtr)))
+            	    {
+                	    for(i = 0; i < numcolumn; i++)
+                	    {
+                    	    memcpy(echoBuffer, row[i], size); 
+                    	    if (send(clntSocket, echoBuffer, RCVBUFSIZE, 0) != RCVBUFSIZE)
+           	 	                DieWithError("send() failed");	
+                	    }
+            	    }
+        	    }
+        	    mysql_free_result(resPtr);
+    		}	
+		}
+
+		else if (echoBuffer[2]==5)//logout
+		{
+			Logout(mysql);
+			exit(0);
+		}
+
+		else if  (echoBuffer[2]==6)//更换email
+		{
+			char addr[size]={0};
+			memcpy(addr, &echoBuffer[3], size);
+
+			if(ChangeMailAddr(mysql, sid, addr))//失败
+			{
+				memset(echoBuffer, 0, RCVBUFSIZE);				
+           	    echoBuffer[0] = 1;
+           	    if (send(clntSocket, echoBuffer, RCVBUFSIZE, 0) != RCVBUFSIZE)
+           	 	    DieWithError("send() failed");	    
+			}
+			else
+			{
+				memset(echoBuffer, 0, RCVBUFSIZE);	
+           	    echoBuffer[0] = 0;
+           	    if (send(clntSocket, echoBuffer, RCVBUFSIZE, 0) != RCVBUFSIZE)
+           	 	    DieWithError("send() failed");		
+			}
+			
+		}
+
+		else if  (echoBuffer[2]==7)//更换密码
+		{
+			char pw[size]={0};
+			memcpy(pw, &echoBuffer[3], size);
+
+			if(ChangePasswd(mysql, sid, pw))//失败
+			{
+				memset(echoBuffer, 0, RCVBUFSIZE);				
+           	    echoBuffer[0] = 1;
+           	    if (send(clntSocket, echoBuffer, RCVBUFSIZE, 0) != RCVBUFSIZE)
+           	 	    DieWithError("send() failed");	    
+			}
+			else
+			{
+				memset(echoBuffer, 0, RCVBUFSIZE);	
+           	    echoBuffer[0] = 0;
+           	    if (send(clntSocket, echoBuffer, RCVBUFSIZE, 0) != RCVBUFSIZE)
+           	 	    DieWithError("send() failed");		
+			}
+			
+		}
+	}		
+} 
+
+void HandleAdmin(MYSQL* mysql, int clntSocket, administrator admin)
+{
+    MYSQL_RES* resPtr;
+    char echoBuffer[RCVBUFSIZE];        
+    int recvMsgSize;
+    
+    for(;;)
+    {
+        if (echoBuffer[2]==1)//管理员添加课程
+		{
+		    int cid;
+		    char name[size];
+		    int credit;
+		    int course_hours;
+		    int tid;
+		    char course_type[size];
+		    
+		    memcpy(&cid, echoBuffer+3, sizeof(cid));
+		    memcpy(name, echoBuffer+7, size);
+		    memcpy(&credit, echoBuffer+7+size, 4);
+		    memcpy(&course_hours, echoBuffer+11+size, 4);
+		    memcpy(&tid, echoBuffer+15+size, 4);
+		    memcpy(course_type, echoBuffer+19+size, size);
+		    
+			if(admin.add_course(mysql, cid, name, credit, course_hours, tid, course_type))
+			{
+				memset(echoBuffer, 0, RCVBUFSIZE);				
+           	    echoBuffer[0] = 1;
+           	    if (send(clntSocket, echoBuffer, RCVBUFSIZE, 0) != RCVBUFSIZE)
+           	 	    DieWithError("send() failed");	    
+			}
+			else
+			{
+				memset(echoBuffer, 0, RCVBUFSIZE);	
+           	    echoBuffer[0] = 0;
+           	    if (send(clntSocket, echoBuffer, RCVBUFSIZE, 0) != RCVBUFSIZE)
+           	 	    DieWithError("send() failed");		
+			}		
+		}
+
+		else if (echoBuffer[2]==2)//管理员删除课程
+		{
+            int course_id;
+			memcpy(&course_id, &echoBuffer[3], sizeof(course_id));
+
+			if(admin.del_course(mysql, course_id))//失败
+			{
+				memset(echoBuffer, 0, RCVBUFSIZE);				
+           	    echoBuffer[0] = 1;
+           	    if (send(clntSocket, echoBuffer, RCVBUFSIZE, 0) != RCVBUFSIZE)
+           	 	    DieWithError("send() failed");	    
+			}
+			else
+			{
+				memset(echoBuffer, 0, RCVBUFSIZE);	
+           	    echoBuffer[0] = 0;
+           	    if (send(clntSocket, echoBuffer, RCVBUFSIZE, 0) != RCVBUFSIZE)
+           	 	    DieWithError("send() failed");		
+			}			
+		}
+		else if (echoBuffer[2]==3)//更改
+		{
+		    int cid;
+		    char name[size];
+		    int credit;
+		    int course_hours;
+		    int tid;
+		    char course_type[size];
+		    
+		    memcpy(&cid, echoBuffer+3, sizeof(cid));
+		    memcpy(name, echoBuffer+7, size);
+		    memcpy(&credit, echoBuffer+7+size, 4);
+		    memcpy(&course_hours, echoBuffer+11+size, 4);
+		    memcpy(&tid, echoBuffer+15+size, 4);
+		    memcpy(course_type, echoBuffer+19+size, size);
+		    
+			if(admin.update_course(mysql, cid, name, credit, course_hours, tid, course_type))//参数未设定
+			{
+				memset(echoBuffer, 0, RCVBUFSIZE);				
+           	    echoBuffer[0] = 1;
+           	    if (send(clntSocket, echoBuffer, RCVBUFSIZE, 0) != RCVBUFSIZE)
+           	 	    DieWithError("send() failed");	    
+			}
+			else
+			{
+				memset(echoBuffer, 0, RCVBUFSIZE);	
+           	    echoBuffer[0] = 0;
+           	    if (send(clntSocket, echoBuffer, RCVBUFSIZE, 0) != RCVBUFSIZE)
+           	 	    DieWithError("send() failed");		
+			}				
+		}
+
+/*		else if (echoBuffer[2]==4)//admin_view_course
+		{
+			//do sth
+    		if (send(clntSocket, echoBuffer, recvMsgSize, 0) != recvMsgSize)
+           	 	DieWithError("send() failed");		
+		}*/
+
+		else if (echoBuffer[2]==5)//增加老师
+		{
+		    int tid;
+		    char name[size];
+		    char teach_sex[size];
+		    char phone[size];
+		    char title[size];
+		    char department[size];
+		    char birth[size];
+		    
+		    memcpy(&tid, echoBuffer+3, sizeof(tid));
+		    memcpy(name, echoBuffer+7, size);
+		    memcpy(teach_sex, echoBuffer+7+size, size);
+		    memcpy(phone, echoBuffer+7+2*size, size);
+		    memcpy(title, echoBuffer+7+3*size, size);
+		    memcpy(department, echoBuffer+7+4*size, size);
+		    memcpy(birth, echoBuffer+7+5*size, size);
+		    
+			if(admin.add_teacher(mysql, tid, name, teach_sex, phone, title, department, birth))//参数未设定
+			{
+				memset(echoBuffer, 0, RCVBUFSIZE);				
+           	    echoBuffer[0] = 1;
+           	    if (send(clntSocket, echoBuffer, RCVBUFSIZE, 0) != RCVBUFSIZE)
+           	 	    DieWithError("send() failed");	    
+			}
+			else
+			{
+				memset(echoBuffer, 0, RCVBUFSIZE);	
+           	    echoBuffer[0] = 0;
+           	    if (send(clntSocket, echoBuffer, RCVBUFSIZE, 0) != RCVBUFSIZE)
+           	 	    DieWithError("send() failed");		
+			}	
+		}
+		else if (echoBuffer[2]==6)//删除老师
+		{
+			int teacherId;
+			memcpy(&teacherId, &echoBuffer[3], sizeof(teacherId));
+
+			if(admin.del_teacher(mysql, teacherId))//失败,加id
+			{
+				memset(echoBuffer, 0, RCVBUFSIZE);				
+           	    echoBuffer[0] = 1;
+           	    if (send(clntSocket, echoBuffer, RCVBUFSIZE, 0) != RCVBUFSIZE)
+           	 	    DieWithError("send() failed");	    
+			}
+			else
+			{
+				memset(echoBuffer, 0, RCVBUFSIZE);	
+           	    echoBuffer[0] = 0;
+           	    if (send(clntSocket, echoBuffer, RCVBUFSIZE, 0) != RCVBUFSIZE)
+           	 	    DieWithError("send() failed");		
+			}		
+		}
+		else if (echoBuffer[2]==7)//增加学生
+		{
+            int sid;
+            char name[size];
+            char sex[size];
+            char classid[size];
+            char birth[size];
+            
+            memcpy(&sid, echoBuffer+3, 4);
+            memcpy(name, echoBuffer+7, size);
+            memcpy(sex, echoBuffer+7+size, size);
+            memcpy(classid, echoBuffer+7+2*size, size);
+            memcpy(birth, echoBuffer+7+3*size, size);
+            
+			if(admin.add_student(mysql, sid, name, sex, classid, birth))//未完成，参数未加
+			{
+				memset(echoBuffer, 0, RCVBUFSIZE);				
+           	    echoBuffer[0] = 1;
+           	    if (send(clntSocket, echoBuffer, RCVBUFSIZE, 0) != RCVBUFSIZE)
+           	 	    DieWithError("send() failed");	    
+			}
+			else
+			{
+				memset(echoBuffer, 0, RCVBUFSIZE);	
+           	    echoBuffer[0] = 0;
+           	    if (send(clntSocket, echoBuffer, RCVBUFSIZE, 0) != RCVBUFSIZE)
+           	 	    DieWithError("send() failed");		
+			}	
+		}
+		else if (echoBuffer[2]==8)//删除学生
+		{
+			int studentId;
+			memcpy(&studentId, &echoBuffer[3], sizeof(studentId));
+
+			if(admin.del_student(mysql, studentId))//失败,加id
+			{
+				memset(echoBuffer, 0, RCVBUFSIZE);				
+           	    echoBuffer[0] = 1;
+           	    if (send(clntSocket, echoBuffer, RCVBUFSIZE, 0) != RCVBUFSIZE)
+           	 	    DieWithError("send() failed");	    
+			}
+			else
+			{
+				memset(echoBuffer, 0, RCVBUFSIZE);	
+           	    echoBuffer[0] = 0;
+           	    if (send(clntSocket, echoBuffer, RCVBUFSIZE, 0) != RCVBUFSIZE)
+           	 	    DieWithError("send() failed");		
+			}	
+		}
+
+		else if (echoBuffer[2]==9)//logout
+		{
+			Logout(mysql);
+			exit(0);
+		}
+
+		else if (echoBuffer[2]==10)//增加可注册ID
+		{
+			int addId;
+			memcpy(&addId, &echoBuffer[3], sizeof(addId));
+
+			if(AddUserInfo(mysql, addId))//失败,加id
+			{
+				memset(echoBuffer, 0, RCVBUFSIZE);				
+           	    echoBuffer[0] = 1;
+           	    if (send(clntSocket, echoBuffer, RCVBUFSIZE, 0) != RCVBUFSIZE)
+           	 	    DieWithError("send() failed");	    
+			}
+			else
+			{
+				memset(echoBuffer, 0, RCVBUFSIZE);	
+           	    echoBuffer[0] = 0;
+           	    if (send(clntSocket, echoBuffer, RCVBUFSIZE, 0) != RCVBUFSIZE)
+           	 	    DieWithError("send() failed");		
+			}		
+		}
+
+		else if (echoBuffer[2]==11)//删除可注册ID
+		{
+			int deleteId;
+			memcpy(&deleteId, &echoBuffer[3], sizeof(deleteId));
+
+			if(DeleteUserInfo(mysql, deleteId))//失败,加id
+			{
+				memset(echoBuffer, 0, RCVBUFSIZE);				
+           	    echoBuffer[0] = 1;
+           	    if (send(clntSocket, echoBuffer, RCVBUFSIZE, 0) != RCVBUFSIZE)
+           	 	    DieWithError("send() failed");	    
+			}
+			else
+			{
+				memset(echoBuffer, 0, RCVBUFSIZE);	
+           	    echoBuffer[0] = 0;
+           	    if (send(clntSocket, echoBuffer, RCVBUFSIZE, 0) != RCVBUFSIZE)
+           	 	    DieWithError("send() failed");		
+			}		
+		}
+    }    
+}
+
+void HandleTCPClient(int clntSocket)
+{
+    MYSQL mysql;
+    int res;
+//    mysql_init(&mysql);
+    
+/*    if (!mysql_real_connect(&mysql, "localhost",
+                            "root", "5526718",
+                            "course_system", 0,
+                             NULL, 0))
+    {
+        printf("error\n");
+        //exit(1);
+    }
+*/  
+    char echoBuffer[RCVBUFSIZE];        
+    int recvMsgSize;                   
+    for(;;)
+    {
+        memset(echoBuffer, 0, RCVBUFSIZE);
+        if ((recvMsgSize = recv(clntSocket, echoBuffer, RCVBUFSIZE, 0)) < 0)
+            DieWithError("recv() failed");
+
+
+  	    //学生
+	    if(echoBuffer[1]==1)
+	    {
+	        student stu1;
+
+		    if(echoBuffer[2]==0)//student_login
+		    {
+			    int id=0;
+			    char var[size]={0};
+
+			    memcpy(&id, echoBuffer+3, 4);
+			    memcpy(var, echoBuffer+7, size);
+			    
+		//	    printf("%s\n", echoBuffer+3);
+		//	    printf("%s\n", var);
+
+			    stu1.student_id = id;
+		//	    printf("%d\n", stu1.student_id);
+			    
+			   
+			    if(Login(&mysql, id, var, 3))//登录成功，想客户端返回0
+			    {
+                  
+			        //登录失败
+				    memset(echoBuffer, 0, RCVBUFSIZE);
+			        echoBuffer[0] = 0;
+    		        if (send(clntSocket, echoBuffer, RCVBUFSIZE, 0) != RCVBUFSIZE)
+           	 	        DieWithError("send() failed"); 
+           	    }  
+           	    else//登录成功
+           	    {
+           	      
+				    memset(echoBuffer, 0, RCVBUFSIZE);
+           	        echoBuffer[0] = 1;
+           	        if (send(clntSocket, echoBuffer, RCVBUFSIZE, 0) != RCVBUFSIZE)
+           	 	        DieWithError("send() failed");
+           	 	        
+           	 	    HandleStudent(&mysql, clntSocket, stu1);
+           	    }
+           	    printf("=====4======\n");
+	        }
+	    }		
+
+	    //老师 
+	    else if(echoBuffer[1]==2)
+	    {
+		    teacher teacher1;
+		    if(echoBuffer[2]==0)//老师登录
+            {
+			int id=0;
+			char var[size]={0};
+
+            memcpy(&id, echoBuffer+3, 4);
+            memcpy(var, echoBuffer+7, size);
+
+			teacher1.teacher_id = id;
+
+			if(Login(&mysql, id, var, 2))//登录成功，想客户端返回0
+			{
+
+			    //登录失败
+				memset(echoBuffer, 0, RCVBUFSIZE);
+			    echoBuffer[0] = 0;
+    		    if (send(clntSocket, echoBuffer, RCVBUFSIZE, 0) != RCVBUFSIZE)
+           	 	    DieWithError("send() failed");
+           	 }
+           	 else//登录成功
+           	 {
+				memset(echoBuffer, 0, RCVBUFSIZE);
+           	    echoBuffer[0] = 1;
+           	    if (send(clntSocket, echoBuffer, RCVBUFSIZE, 0) != RCVBUFSIZE)
+           	 	    DieWithError("send() failed");
+           	 	    
+           	 	HandleTeacher(&mysql, clntSocket, teacher1);
+           	 }
+            }
+		}
+
+
+		//教务处管理员
+		else if(echoBuffer[1]==3)
+		{
+			administrator admin1;
+
+			if(echoBuffer[2]==0)//admin_login
+			{
+				int id=0;
+				char var[size]={0};
+                administrator andmin1;
+
+				memcpy(&id, &echoBuffer[3], sizeof(id));
+				memcpy(var, &echoBuffer[3+sizeof(id)], size);
+
+				admin1.admin_id = id;
+
+				if(Login(&mysql, id, var, 1))//登录成功，想客户端返回0
+				{
+
+			    	//登录失败
+				memset(echoBuffer, 0, RCVBUFSIZE);
+			    	echoBuffer[0] = 0;
+    		   	 	if (send(clntSocket, echoBuffer, RCVBUFSIZE, 0) != RCVBUFSIZE)
+           	 	    	DieWithError("send() failed");
+           	 	}
+           	 	else//登录成功
+           	 	{
+					memset(echoBuffer, 0, RCVBUFSIZE);
+           	    	echoBuffer[0] = 1;
+           	    	if (send(clntSocket, echoBuffer, RCVBUFSIZE, 0) != RCVBUFSIZE)
+           	 	    DieWithError("send() failed");
+           	 	}
+			}
+		
+		}
+
+		//注册
+		else if(echoBuffer[1]==4)
+		{
+			int regId=0;
+			char mail[size]={0};
+			char pw[size]={0};
+			int permission=0;
+
+			memcpy(&regId, &echoBuffer[3], sizeof(regId));
+			memcpy(mail, &echoBuffer[3+sizeof(regId)], size);
+			memcpy(pw, &echoBuffer[3+sizeof(regId)+sizeof(mail)], size);
+			memcpy(&permission, &echoBuffer[3+sizeof(regId)+sizeof(mail)+sizeof(pw)], sizeof(permission));				
+		
+			if(RegisterAccount(& mysql, regId, mail, pw, permission))//失败,加id
+			{
+				memset(echoBuffer, 0, RCVBUFSIZE);				
+            	echoBuffer[0] = 1;
+           		if (send(clntSocket, echoBuffer, RCVBUFSIZE, 0) != RCVBUFSIZE)
+           	 		DieWithError("send() failed");	    
+			}
+			else
+			{
+				memset(echoBuffer, 0, RCVBUFSIZE);	
+           		echoBuffer[0] = 0;
+           		if (send(clntSocket, echoBuffer, RCVBUFSIZE, 0) != RCVBUFSIZE)
+           	    	DieWithError("send() failed");		
+			}		
+		}
+	}
+
+    close(clntSocket);  
+}

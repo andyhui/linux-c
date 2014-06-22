@@ -1,0 +1,20 @@
+#ifndef HANDLE_TCP_CLIENT_H
+#define HANDLE_TCP_CLIENT_H
+
+#include "teacher.h"
+#include "student.h"
+#include "administrator.h"
+#include "RegAndLog.h"
+#include "jwsmtp/jwsmtp.h"
+
+void HandleTCPClient(int clntSocket);
+
+void HandleAdmin(MYSQL* mysql, int clntSocket, administrator admin);
+
+void HandleStudent(MYSQL* mysql, int clntSocket, student stu);
+
+void HandleTeacher(MYSQL* mysql, int clntSocket, teacher teacher1);
+
+static bool email_notice(char* to_email_address,char* from_email_address,char* passwd,char* subject,char* message,char* email_server);
+
+#endif

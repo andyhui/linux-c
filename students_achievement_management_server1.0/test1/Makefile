@@ -1,0 +1,20 @@
+CC=gcc
+CXX=g++
+#CFLAGS=-I../include -g #-DDEBUG
+CPPFLAGS= -I/usr/include/mysql/ -I/usr/local/include/jwsmtp-1.32 -g #DDbug
+OBJS=
+LIBS=-lmysqlclient /usr/local/lib/libjwsmtp.a
+
+all:Client Server
+
+Client: Client.o DieWithError.o
+	$(CXX) -o $@ $^ -g
+
+Server: CreateTCPServerSocket.o AcceptTCPConnection.o DieWithError.o administrator.o student.o teacher.o HandleTCPClient.o Server.o
+	$(CXX) -o $@ $^ $(CPPFLAGS) $(LIBS)
+
+clean:
+	rm -f core *.o Client Server
+
+wc:
+	wc *.[ch]
