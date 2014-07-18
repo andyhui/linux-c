@@ -14,14 +14,15 @@ int main()
     teacher tc_1(10,"lixiang",1);
     administrator ad_1(20,"wangfang");
     MySQLInterface sql;
-    MYSQL mysql_instance;
-    sql.connectMySQL("localhost","root","root","CourseSystem",0);
-    string database = "CourseSystem";
+    //MYSQL mysql_instance;
+    sql.connectMySQL("localhost","root","root","database",0);
+    string database = "student_course";
     sql.createDatabase(database);
-    const string query = "create table if not exists TableStudent(ID \
+    const string query = "create table if not exists TableTeacher(ID \
         char(12) not null primary key,Name  char(20) not null,Sex   char(8) \
         not null,Class char(10) not null,DateOfBirth char(8) not null);";
     sql.createdbTable(query);
+    sql.closeMySQL();
     int a_id = ad_1.get_admin_id();
     ad_1.arrange_homework(1);
     printf("hello world!\n");
