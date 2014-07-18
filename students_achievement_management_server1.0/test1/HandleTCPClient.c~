@@ -1,0 +1,173 @@
+#include <stdio.h>      
+#include <sys/socket.h> 
+#include <unistd.h>    
+//#include "student.h" 
+
+#define RCVBUFSIZE 2048   
+#define size 100
+void DieWithError(char *errorMessage);
+
+void HandleTCPClient(int clntSocket)
+{
+    MYSQL mysql;
+    mysql_init(&mysql);
+    int res;
+    
+    if (!mysql_real_connect(&mysql, "localhost",
+                            "root", "5526718",
+                            "course_system", 0,
+                             NULL, 0))
+    {
+        printf("error\n");
+        //exit(1);
+    }
+   
+    char echoBuffer[RCVBUFSIZE];        
+    int recvMsgSize;                   
+    for(;;)
+    {
+        if ((recvMsgSize = recv(clntSocket, echoBuffer, RCVBUFSIZE, 0)) < 0)
+            DieWithError("recv() failed");
+
+
+  	    //学生
+	    if(echoBuffer[1]==1)
+	    {
+	        student stu1;
+
+		    if(echoBuffer[2]==0)//student_login
+		    {
+			    int id=0;
+			    char var[size]={0};
+
+			    memcpy(&id, echoBuffer[3], sizeof(id));
+			    memcpy(var, echoBuffer[3+sizeof(id)], size);
+
+			    stu1.student_id = id;
+
+			    if(Login(&mysql, id, var, 3))//登录成功，想客户端返回0
+			    {
+
+			        //登录失败
+				    memset(echoBuffer, 0, RCVBUFSIZE);
+			        echoBuffer[0] = 0;
+    		        if (send(clntSocket, echoBuffer, RCVBUFSIZE, 0) != RCVBUFSIZE)
+           	 	        DieWithError("send() failed"); 
+           	    }  
+           	    else//登录成功
+           	    {
+				    memset(echoBuffer, 0, RCVBUFSIZE);
+           	        echoBuffer[0] = 1;
+           	        if (send(clntSocket, echoBuffer, RCVBUFSIZE, 0) != RCVBUFSIZE)
+           	 	        DieWithError("send() failed");
+           	 	        
+           	 	    HandleStudent(&mysql, clntSocket, stu1.student_id);
+           	    }
+	        }
+	    }		
+
+	    //老师 
+	    else if(echoBuffer[1]==2)
+	    {
+		    teacher teacher1;
+		    if(echoBuffer[2]==0)//老师登录
+			int id=0;
+			char var[size]={0};
+
+			memcpy(&id, echoBuffer[3], sizeof(id));
+			memcpy(var, echoBuffer[3+sizeof(id)], size);
+
+			teacher1.teacher_id = id;
+
+			if(Login(&mysql, id, var, 2))//登录成功，想客户端返回0
+			{
+
+			    //登录失败
+				memset(echoBuffer, 0, RCVBUFSIZE);
+			    echoBuffer[0] = 0;
+    		    if (send(clntSocket, echoBuffer, RCVBUFSIZE, 0) != RCVBUFSIZE)
+           	 	    DieWithError("send() failed");
+           	 }
+           	 else//登录成功
+           	 {
+				memset(echoBuffer, 0, RCVBUFSIZE);
+           	    echoBuffer[0] = 1;
+           	    if (send(clntSocket, echoBuffer, RCVBUFSIZE, 0) != RCVBUFSIZE)
+           	 	    DieWithError("send() failed");
+           	 	    
+           	 	HandleTeacher(clntSocket);
+           	 }
+		}
+
+
+	//教务处管理员
+	else if(echoBuffer[1]==3)
+	{
+		administrator admin1;
+
+		if(echoBuffer[2]==0)//admin_login
+		{
+			int id=0;
+			char var[size]={0};
+
+			memcpy(&id, echoBuffer[3], sizeof(id));
+			memcpy(var, echoBuffer[3+sizeof(id)], size);
+
+			stu1.admin1 = id;
+
+			if(Login(&mysql, id, var, 1))//登录成功，想客户端返回0
+			{
+
+			    //登录失败
+				memset(echoBuffer, 0, RCVBUFSIZE);
+			    echoBuffer[0] = 0;
+    		    if (send(clntSocket, echoBuffer, RCVBUFSIZE, 0) != RCVBUFSIZE)
+           	 	    DieWithError("send() failed");
+           	 }
+           	 else//登录成功
+           	 {
+				memset(echoBuffer, 0, RCVBUFSIZE);
+           	    echoBuffer[0] = 1;
+           	    if (send(clntSocket, echoBuffer, RCVBUFSIZE, 0) != RCVBUFSIZE)
+           	 	    DieWithError("send() failed");
+           	 }
+		}
+		
+	}
+
+	//注册
+	else if(echoBuffer[1]==4)
+	{
+		int regId=0;
+		char mail[size]={0};
+		char pw[size]={0};
+		int permission=0;
+
+		memcpy(&regId, echoBuffer[3], sizeof(regId));
+		memcpy(mail, echoBuffer[3+sizeof(regId)], size);
+		memcpy(pw, echoBuffer[3+sizeof(regId)+sizeof(mail)], size);
+		memcpy(&permission, echoBuffer[3+sizeof(regId)+sizeof(mail)+sizeof(pw)], sizeof(permission));				
+		
+		if(RegisterAccount(& mysql, regId, mail, pw, permission))//失败,加id
+		{
+			memset(echoBuffer, 0, RCVBUFSIZE);				
+            echoBuffer[0] = 1;
+           	if (send(clntSocket, echoBuffer, RCVBUFSIZE, 0) != RCVBUFSIZE)
+           	 	DieWithError("send() failed");	    
+		}
+		else
+		{
+			memset(echoBuffer, 0, RCVBUFSIZE);	
+           	echoBuffer[0] = 0;
+           	if (send(clntSocket, echoBuffer, RCVBUFSIZE, 0) != RCVBUFSIZE)
+           	    DieWithError("send() failed");		
+		}		
+	}
+	}
+
+
+
+
+
+    close(clntSocket);  
+}

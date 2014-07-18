@@ -1,0 +1,60 @@
+use TCPEchoClient and TCPEchoServer-ForkN to do the following handshake between two neighboring wireless IPs (IP1 and IP2):
+
+Either IP1 or IP2 can initiate the handshake.  Without loss of generality, let's say IP1 initiate the handshake (i.e., using "tcpclient" to contact the "tcpserver" on the other IP) 
+1. IP1 chooses a 128-bit nonce n1, sends n1 to IP2;
+2. IP2 chooses a 128-bit nonce n2,
+   computes n1 xor n2's md5 message digest (i.e., md5(n1 xor n2)), 
+   2.1. with 90% probability, replies back "n2, x = md5(n1 xor n2)"  (256-bit bit string) to IP1.
+   2.2. with 10% probability, replies back "n2, x = md5(n1)" to IP1.
+3. IP1 gets the reply,  gets n2, then computes n1 xor n2's md5 message digest,
+   and compares the message digest with "x" in the reply message.
+   if the same, sends "matching handshake" to IP2;
+   otherwise, sends "non-matching handshake" to IP2.
+4. IP2 prints the received message
+
+          IP1                         IP2
+choose n1  |\__________>_____________  |
+           |                         \ |
+           |                          \| get n1, choose n2
+           |                           | compute md5(n1 xor x2)   md5(n1)
+           |                           | 90% prob.  sends back md5(n1 xor n2)
+           |                           | 10% prob.  sends back md5(n1)
+           |                          /|
+           |  ----------<------------- |
+           | /                         |
+           |/                          |
+ get n2    |                           |
+ compute md5(n1 xor n2)                |
+ if then else                          |
+           |\_______________________   |
+           |                        \  |
+           |                         \ | receives "matching" or "non-matching"
+           |                           | print the message out
+           |                           |
+           \/                         \/
+
+Whenever sending a message, the sender prefixes the message length (in bytes)
+to the message.   The message length field is of a fixed standard length
+(e.g., 4-byte.  Let's use 4-byte as our standard).
+
+      +----------------+------------------------------------------+
+      | message length |   sender's message                       |
+      | (4 bytes)      |(message length says its length in bytes) |
+      +----------------+------------------------------------------+
+
+(Be careful of Endian problem)
+The message (including the prefixed message length field) must be in
+the canonical byte order. I.e.,
+         0x(msb)12345678(lsb) (32-bit) stores as
+         0x78 0x56 0x34 0x12 in the sent-out packet.
+             e.g., long y = 0x12345678
+                put y & 0xff in the byte[0]
+                    (y & 0xff00) >> 8 in the byte [1]
+                    (y & 0xff0000) >> 16 in the byte [2]
+                    (y & 0xff000000) >> 24 in the byte [3]
+
+srand48(getpid()) at the beginning of main(), do it only once
+
+then call
+mrand48()  to obtain a uniformly distributed random long integer
+drand48()  to obtain a uniformly distributed double between 0 and 1

@@ -1,0 +1,11 @@
+prefix=/usr/local
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: jwSMTP
+Description: C++ library for development of CGI programs.
+Version: 1.32.15
+Libs: -L${libdir} -ljwsmtp-1.32
+Cflags: -I${includedir}/jwsmtp-1.32 -I${libdir}/jwsmtp-1.32/include
+

@@ -1,13 +1,15 @@
 CC=gcc
 CXX=g++
-CFLAGS= -I /usr/include/mysql/ -Wall -g #DDbug
-CPPFLAGS= -I /usr/include/mysql/ -g #DDbug
+#CFLAGS= -I /usr/include/mysql/ -Wall -g #DDbug
+CPPFLAGS= -I/usr/include/mysql/ -I/usr/local/include/jwsmtp-1.32 -g #DDbug
+#CPPFLAGS= -I/usr/include/mysql/ -I./jwsmtp-1.32.15 -g #DDbug
 OBJS=
-LIBS=-lmysqlclient
+LIBS=-lmysqlclient /usr/local/lib/libjwsmtp.a
+#LIBS=-lmysqlclient `pkg-config --libs --cflags jwsmtp-<version>`
 
 all:server
 
-server: main.o MySQLInterface.o administrator.o teacher.o
+server: main.o administrator.o teacher.o student.o RegAndLog.o
 	$(CXX) -o $@ $^ $(CPPFLAGS) $(LIBS)
 
 clean:
