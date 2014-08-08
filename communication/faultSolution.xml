@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<faultSolution_table>
+	<faultSolution id='1'>
+		<faultID></faultID>
+		<faultEquipName></faultEquipName>
+		<faultEquipMode></faultEquipMode>
+		<faultDescription></faultDescription>
+		<faultCause></faultCause>
+		<faultSolution></faultSolution>
+		<faultType></faultType>
+		<faultLevel></faultLevel>
+	</faultSolution>
+	<faultSolution id='2'>
+		<faultID></faultID>
+		<faultEquipName></faultEquipName>
+		<faultEquipMode></faultEquipMode>
+		<faultDescription></faultDescription>
+		<faultCause></faultCause>
+		<faultSolution></faultSolution>
+		<faultType></faultType>
+		<faultLevel></faultLevel>
+	</faultSolution>
+</faultSolution_table>

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<user_table>
+	<userInfo id='1'>
+		<userID></userID>
+		<userName></userName>
+		<userPassword></userPassword>
+		<userAuthorized></userAuthorized>
+		<userPrivilege></userPrivilege>
+		<userState></userState>
+	</userInfo>
+	<userInfo id='2'>
+		<userID></userID>
+		<userName></userName>
+		<userPassword></userPassword>
+		<userAuthorized></userAuthorized>
+		<userPrivilege></userPrivilege>
+		<userState></userState>
+	</userInfo>
+</user_table>

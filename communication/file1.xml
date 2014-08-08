@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<equipBasicInfo_table>
+	<equipBasicInfo id='1'>
+		<euqipmentSN></euqipmentSN>
+		<euqipAssetNo></euqipAssetNo>
+		<euqipmentName></euqipmentName>
+		<euqipManuClass></euqipManuClass>
+		<euqipFactory></euqipFactory>
+		<euqipManuTime></euqipManuTime>
+		<euqipFitoutTime></euqipFitoutTime>
+	</equipBasicInfo>
+	<equipBasicInfo id='2'>
+		<euqipmentSN></euqipmentSN>
+		<euqipAssetNo></euqipAssetNo>
+		<euqipmentName></euqipmentName>
+		<euqipManuClass></euqipManuClass>
+		<euqipFactory></euqipFactory>
+		<euqipManuTime></euqipManuTime>
+		<euqipFitoutTime></euqipFitoutTime>
+	</equipBasicInfo>
+</equipBasicInfo_table>
