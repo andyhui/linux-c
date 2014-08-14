@@ -171,12 +171,13 @@ static int send_file(struct in_addr serv_ip,unsigned short serv_port)
     msg_1.msg_type = UPLOADBASEINFO;
     msg_1.msg_len = filesize;
     msg_1.sync_time = 20140104;
-    bcopy(buff+sizeof(MsgTotalPacket),&msg_1,sizeof(msg_1));
+    printf("msg_1's msg type is %0x,msg_1's msg len is %d\n",msg_1.msg_type,msg_1.msg_len);
+    memcpy(buff+sizeof(MsgTotalPacket),&msg_1,sizeof(msg_1));
 
     msg_2.msg_type = UPLOADMTINFO;
     msg_2.msg_len = filesize2;
     msg_2.sync_time = 20140807;
-    bcopy(buff+sizeof(MsgTotalPacket)+sizeof(MsgSyncPacket),&msg_2,sizeof(msg_2));
+    memcpy(buff+sizeof(MsgTotalPacket)+sizeof(MsgSyncPacket),&msg_2,sizeof(msg_2));
 
 #ifdef DEBUG
     printf("packet file ok.\n");
@@ -319,9 +320,10 @@ static int send_file(struct in_addr serv_ip,unsigned short serv_port)
 int main(int argc,char *argv[])
 {
     char *serv_ip = (char *)malloc(sizeof(char)*16);
-    if(3 != argc)
+    if(2 != argc)
     {
-        printf("please input more parameters \t\n");
+        fprintf(stderr,"Usage: <Server Port>\n");
+        exit(1);
     }
     int sock;
     /*send_to_server(sock,)*/
@@ -350,6 +352,8 @@ int main(int argc,char *argv[])
         fprintf(stderr,"the parameter is error please check again.\n");
         exit(1);
     }
+
+    flag = 0;
 
     switch(flag)
     {
