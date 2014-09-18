@@ -16,8 +16,9 @@
 #include <QTextCodec>
 #include <QSplitter>
 #include <QListWidget>
-#include <QMacStyle>
-#include "AllClass.h"
+#include <QStackedWidget>
+#include "StackClass.h"
+#include "curriculum.h"
 
 class MainWindow:public QMainWindow
 {
@@ -37,11 +38,14 @@ private:
     void createActions();
     void createMenus();
     void addIconGrupBox();
+    void showCurriculum();
 
     QWidget *centralWidget;
 
     QGroupBox *classGroupBox;
-    AllClass *allClass;
+    QGroupBox *curriculumGroupBox;
+    StackClass *stackClass;
+    Curriculum *curriculum;
 
     QMenu *fileMenu;
     QMenu *viewMenu;
@@ -62,6 +66,7 @@ private:
     QPushButton *communicate;
     QPushButton *setting;
 
+    QStackedWidget *stack;
 
 };
 

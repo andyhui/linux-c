@@ -1,10 +1,8 @@
 #include <QtGui>
 #include <QSizePolicy>
-#include <QMacStyle>
-#include <QWindowsStyle>
 #include "mainwindow.h"
 #include "AllClass.h"
-
+#include "curriculum.h"
 
 MainWindow::MainWindow()
 {
@@ -12,21 +10,25 @@ MainWindow::MainWindow()
     setCentralWidget(centralWidget);
 
     addIconGrupBox();
+    showCurriculum();
 
     createActions();
     createMenus();
 
     QGridLayout *mainLayout = new QGridLayout;
 
-    /*QListWidget *list = new QListWidget;
-    list->addItem(QObject::tr("课程"));
-    list->addItem(QObject::tr("课程表"));
-    list->addItem(QObject::tr("课程填报"));
-    list->addItem(QObject::tr("通讯&聊天"));
-    list->addItem(QObject::tr("设置"));
-    QSizePolicy qtSp(QSizePolicy::Preferred,QSizePolicy::Preferred,QSizePolicy::PushButton);
-    list->setSizePolicy(qtSp);*/
+    stack = new QStackedWidget;
 
+    QListWidget *list = new QListWidget;
+    list->insertItem(0,QObject::tr("课程"));
+    list->insertItem(1,QObject::tr("课程表"));
+    //list->addItem(QObject::tr("课程填报"));
+    //list->addItem(QObject::tr("通讯&聊天"));
+    //list->addItem(QObject::tr("设置"));
+    QSizePolicy qtSp(QSizePolicy::Preferred,QSizePolicy::Preferred,QSizePolicy::PushButton);
+    list->setSizePolicy(qtSp);
+
+    /*
     QVBoxLayout *vChooseMenu = new QVBoxLayout;
     course = new QPushButton(tr("课程"),this);
     courseTable = new QPushButton(tr("课程表"),this);
@@ -42,17 +44,23 @@ MainWindow::MainWindow()
     vChooseMenu->addWidget(setting,0,Qt::AlignTop);
     vChooseMenu->addStretch(26);
     //vChooseMenu->setSizePolicy(qtSp);
+    */
 
-    //mainLayout->addWidget(list,0,0);
-    mainLayout->addLayout(vChooseMenu,0,0);
-    mainLayout->addWidget(classGroupBox,0,1);
+
+    stack->addWidget(classGroupBox);
+    stack->addWidget(curriculumGroupBox);
+
+    mainLayout->addWidget(list);
+    //mainLayout->addLayout(vChooseMenu,0,0);
+    mainLayout->addWidget(stack,0,Qt::AlignHCenter);
 
     centralWidget->setLayout(mainLayout);
 
     setWindowTitle(tr("select course"));
 
-}
+    connect(list,SIGNAL(currentRowChanged(int)),stack,SLOT(setCurrentIndex(int)));
 
+}
 void MainWindow::about()
 {
     QMessageBox::about(this, tr("About Icons"),
@@ -65,11 +73,22 @@ void MainWindow::addIconGrupBox()
 {
     classGroupBox = new QGroupBox(tr("select course"));
 
-    allClass = new AllClass;
+    stackClass = new StackClass;
 
     QVBoxLayout *layout = new QVBoxLayout;
-    layout->addWidget(allClass);
+    layout->addWidget(stackClass);
     classGroupBox->setLayout(layout);
+}
+
+void MainWindow::showCurriculum()
+{
+    curriculumGroupBox = new QGroupBox(tr("curriculum"));
+
+    curriculum = new Curriculum;
+
+    QVBoxLayout *layout = new QVBoxLayout;
+    layout->addWidget(curriculum);
+    curriculumGroupBox->setLayout(layout);
 }
 
 void MainWindow::createActions()
