@@ -1,6 +1,5 @@
-#include "Server.h"  /* TCP echo server includes */
+#include "erver.h"  /* TCP echo server includes */
 #include <sys/wait.h>       /* for waitpid() */
-#include "Infor.h"
 
 int main(int argc, char *argv[])
 {
