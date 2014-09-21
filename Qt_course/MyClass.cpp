@@ -1,5 +1,5 @@
 #include <QtGui>
-#include "AllClass.h"
+#include "MyClass.h"
 
 /**布局
  * ----------
@@ -10,7 +10,7 @@
  * ----------
  **/
 
-AllClass::AllClass(QWidget *parent):QWidget(parent)
+MyClass::MyClass(QWidget *parent):QWidget(parent)
 {
     QGridLayout *mainlayout = new QGridLayout;
     setLayout(mainlayout);
@@ -49,32 +49,32 @@ AllClass::AllClass(QWidget *parent):QWidget(parent)
     layout3->addWidget(createPixmapLabel(),6,0);
     layout3->addWidget(createHeaderLabel(tr("历史")),7,0);
 
-    layout4->addWidget(createPixmapLabel(),0,0);
+    /*layout4->addWidget(createPixmapLabel(),0,0);
     layout4->addWidget(createHeaderLabel(tr("英语")),1,0);
     layout4->addWidget(createPixmapLabel(),2,0);
     layout4->addWidget(createHeaderLabel(tr("数学")),3,0);
     layout4->addWidget(createPixmapLabel(),4,0);
     layout4->addWidget(createHeaderLabel(tr("政治")),5,0);
     layout4->addWidget(createPixmapLabel(),6,0);
-    layout4->addWidget(createHeaderLabel(tr("物理")),7,0);
+    layout4->addWidget(createHeaderLabel(tr("物理")),7,0);*/
 
     vLayout->addLayout(layout1,0,0);
     vLayout->addLayout(layout2,0,1);
     vLayout->addLayout(layout3,0,2);
-    vLayout->addLayout(layout4,0,3);
+    //vLayout->addLayout(layout4,0,3);
 
     mainlayout->addLayout(vLayout,0,0);
 
 }
 
-QLabel* AllClass::createHeaderLabel(const QString &text)
+QLabel* MyClass::createHeaderLabel(const QString &text)
 {
     QLabel *label = new QLabel(tr("<b>%1</b>").arg(text));
     label->setAlignment(Qt::AlignCenter);
     return label;
 }
 
-QLabel* AllClass::createPixmapLabel()
+QLabel* MyClass::createPixmapLabel()
 {
     QLabel *label = new QLabel;
     //QLabel *label = new QLabel(tr("<b>%1</b>").arg(text));

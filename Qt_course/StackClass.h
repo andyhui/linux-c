@@ -11,6 +11,7 @@
 #include <QGroupBox>
 #include "AllClass.h"
 #include "MyClass.h"
+#include "TreeView.h"
 
 class StackClass :public QWidget{
     Q_OBJECT
@@ -34,9 +35,15 @@ public:
 public slots:
     void showAllClassGroup();
     void showMyClassGroup();
+    void showTreeGroup();
+    void changeToAllStack();
+    void changeToMyStack();
+    void changeToTreeViewStack();
 
 
 private:
+    //void showAllClassGroup();
+    //void showMyClassGroup();
     QLabel *createHeaderLabel(const QString &text);
     QLabel *createPixmapLabel();
 
@@ -59,10 +66,12 @@ private:
     QLineEdit *searEdit;
 
     QGroupBox *allClassGroup;
-    QGroupBox *myclassGroup;
+    QGroupBox *myClassGroup;
+    QGroupBox *treeGroup;
 
-    AllClass allClass;
-    MyClass myClass;
+    AllClass *allClass;
+    MyClass *myClass;
+    TreeCourse *tree;
 
     QStackedWidget *stack;
 

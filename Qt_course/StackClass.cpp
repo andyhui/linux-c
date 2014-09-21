@@ -19,19 +19,10 @@ StackClass::StackClass(QWidget *parent):QWidget(parent)
 
     showAllClassGroup();
     showMyClassGroup();
+    showTreeGroup();
 
-    stack = new QStackedWidget;
-    stack->addWidget(allClassGroup);
-    stack->addWidget(myclassGroup);
-
+    /*右部列按钮*/
     QVBoxLayout *rightLayout = new QVBoxLayout;
-    QGridLayout *vLayout = new QGridLayout;
-
-    createButton = new QPushButton(tr("创建"),this);
-    deleteButton = new QPushButton(tr("删除"),this);
-    otherButton = new QPushButton(tr("其他"),this);
-    searchButton = new QPushButton(tr("搜索"),this);
-
     allClassButton = new QPushButton(tr("所有课程"),this);
     myClassButton = new QPushButton(tr("我的课程"),this);
     smallView= new QPushButton(tr("缩略图"),this);
@@ -42,9 +33,13 @@ StackClass::StackClass(QWidget *parent):QWidget(parent)
     rightLayout->addWidget(treeView);
     rightLayout->addStretch();
 
-    searEdit = new QLineEdit(tr("search"));
-
+    /*左部上边列按钮*/
     QHBoxLayout  *hLayout = new QHBoxLayout;
+    createButton = new QPushButton(tr("创建"),this);
+    deleteButton = new QPushButton(tr("删除"),this);
+    otherButton = new QPushButton(tr("其他"),this);
+    searEdit = new QLineEdit(tr("search"));
+    searchButton = new QPushButton(tr("搜索"),this);
     hLayout->addWidget(createButton);
     hLayout->addWidget(deleteButton);
     hLayout->addWidget(otherButton);
@@ -52,58 +47,30 @@ StackClass::StackClass(QWidget *parent):QWidget(parent)
     hLayout->addWidget(searEdit);
     hLayout->addWidget(searchButton);
 
-    QVBoxLayout *layout1    = new QVBoxLayout;
-    QVBoxLayout *layout2    = new QVBoxLayout;
-    QVBoxLayout *layout3    = new QVBoxLayout;
-    QVBoxLayout *layout4    = new QVBoxLayout;
-
-    layout1->addWidget(createPixmapLabel(),0,0);
-    layout1->addWidget(createHeaderLabel(tr("数学")),1,0);
-    layout1->addWidget(createPixmapLabel(),2,0);
-    layout1->addWidget(createHeaderLabel(tr("数学")),3,0);
-    layout1->addWidget(createPixmapLabel(),4,0);
-    layout1->addWidget(createHeaderLabel(tr("数学")),5,0);
-    layout1->addWidget(createPixmapLabel(),6,0);
-    layout1->addWidget(createHeaderLabel(tr("数学")),7,0);
-
-    layout2->addWidget(createPixmapLabel(),0,0);
-    layout2->addWidget(createHeaderLabel(tr("语文")),1,0);
-    layout2->addWidget(createPixmapLabel(),2,0);
-    layout2->addWidget(createHeaderLabel(tr("语文")),3,0);
-    layout2->addWidget(createPixmapLabel(),4,0);
-    layout2->addWidget(createHeaderLabel(tr("数学")),5,0);
-    layout2->addWidget(createPixmapLabel(),6,0);
-    layout2->addWidget(createHeaderLabel(tr("数学")),7,0);
-
-    layout3->addWidget(createPixmapLabel(),0,0);
-    layout3->addWidget(createHeaderLabel(tr("美术")),1,0);
-    layout3->addWidget(createPixmapLabel(),2,0);
-    layout3->addWidget(createHeaderLabel(tr("数学")),3,0);
-    layout3->addWidget(createPixmapLabel(),4,0);
-    layout3->addWidget(createHeaderLabel(tr("语文")),5,0);
-    layout3->addWidget(createPixmapLabel(),6,0);
-    layout3->addWidget(createHeaderLabel(tr("历史")),7,0);
-
-    layout4->addWidget(createPixmapLabel(),0,0);
-    layout4->addWidget(createHeaderLabel(tr("英语")),1,0);
-    layout4->addWidget(createPixmapLabel(),2,0);
-    layout4->addWidget(createHeaderLabel(tr("数学")),3,0);
-    layout4->addWidget(createPixmapLabel(),4,0);
-    layout4->addWidget(createHeaderLabel(tr("政治")),5,0);
-    layout4->addWidget(createPixmapLabel(),6,0);
-    layout4->addWidget(createHeaderLabel(tr("物理")),7,0);
-
-    vLayout->addLayout(layout1,0,0);
-    vLayout->addLayout(layout2,0,1);
-    vLayout->addLayout(layout3,0,2);
-    vLayout->addLayout(layout4,0,3);
+    /*左下部分布局*/
+    stack = new QStackedWidget;
+    stack->addWidget(allClassGroup);
+    stack->addWidget(myClassGroup);
+    //stack->addWidget(myClass);
+    //stack->addWidget(treeGroup);
+    stack->addWidget(tree);
 
     QGridLayout *leftLayout = new QGridLayout;
     leftLayout->addLayout(hLayout,0,0);
-    leftLayout->addLayout(vLayout,1,0);
+    leftLayout->addWidget(stack,1,0);
+    //leftLayout->addLayout(vLayout,1,0);
 
     mainlayout->addLayout(leftLayout,0,0);
     mainlayout->addLayout(rightLayout,0,1);
+
+    QObject::connect(allClassButton, SIGNAL(clicked()),
+                     this, SLOT(changeToAllStack()));
+
+    QObject::connect(myClassButton, SIGNAL(clicked()),
+            this, SLOT(changeToMyStack()));
+
+    QObject::connect(treeView, SIGNAL(clicked()),
+            this, SLOT(changeToTreeViewStack()));
 
 
     //stateLabels[0] = createHeaderLabel(tr("数学"));
@@ -168,22 +135,48 @@ QLabel* StackClass::createPixmapLabel()
 
 void StackClass::showAllClassGroup()
 {
-    allClassGroup = new QGroupBox(tr("show all courses"));
+    allClassGroup = new QGroupBox(tr("所有课程"));
     allClass = new AllClass;
 
     QVBoxLayout *layout = new QVBoxLayout;
     layout->addWidget(allClass);
-    classGroupBox->setLayout(layout);
+    allClassGroup->setLayout(layout);
 
 }
 
 void StackClass::showMyClassGroup()
 {
-    myclassGroup = new QGroupBox(tr("show my courses"));
+    myClassGroup = new QGroupBox(tr("我的课程"));
     myClass = new MyClass;
 
     QVBoxLayout *layout = new QVBoxLayout;
     layout->addWidget(myClass);
-    classGroupBox->setLayout(layout);
+    myClassGroup->setLayout(layout);
 
 }
+
+void StackClass::showTreeGroup()
+{
+    treeGroup = new QGroupBox(tr("树形图"));
+    //treeGroup = new QGroupBox();
+    tree = new TreeCourse;
+
+    QHBoxLayout *layout = new QHBoxLayout;
+    layout->addWidget(tree);
+    myClassGroup->setLayout(layout);
+}
+
+void StackClass::changeToAllStack()
+{
+    stack->setCurrentIndex(0);
+}
+void StackClass::changeToMyStack()
+{
+    stack->setCurrentIndex(1);
+}
+
+void StackClass::changeToTreeViewStack()
+{
+    stack->setCurrentIndex(2);
+}
+

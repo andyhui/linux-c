@@ -71,7 +71,8 @@ void MainWindow::about()
 
 void MainWindow::addIconGrupBox()
 {
-    classGroupBox = new QGroupBox(tr("select course"));
+    //classGroupBox = new QGroupBox(tr("select course"));
+    classGroupBox = new QGroupBox();
 
     stackClass = new StackClass;
 
