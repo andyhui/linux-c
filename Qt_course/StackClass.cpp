@@ -21,17 +21,22 @@ StackClass::StackClass(QWidget *parent):QWidget(parent)
     showMyClassGroup();
     showTreeGroup();
 
-    /*右部列按钮*/
-    QVBoxLayout *rightLayout = new QVBoxLayout;
+    /*右边布局*/
+    msgW = new MsgWindows;
+    QGridLayout *rightLayout = new QGridLayout;
+    rightLayout->addWidget(msgW);
+
+    /*中间列按钮*/
+    QVBoxLayout *middleLayout = new QVBoxLayout;
     allClassButton = new QPushButton(tr("所有课程"),this);
     myClassButton = new QPushButton(tr("我的课程"),this);
     smallView= new QPushButton(tr("缩略图"),this);
     treeView =new QPushButton(tr("树状图"),this);
-    rightLayout->addWidget(allClassButton);
-    rightLayout->addWidget(myClassButton);
-    rightLayout->addWidget(smallView);
-    rightLayout->addWidget(treeView);
-    rightLayout->addStretch();
+    middleLayout->addWidget(allClassButton);
+    middleLayout->addWidget(myClassButton);
+    middleLayout->addWidget(smallView);
+    middleLayout->addWidget(treeView);
+    middleLayout->addStretch();
 
     /*左部上边列按钮*/
     QHBoxLayout  *hLayout = new QHBoxLayout;
@@ -52,16 +57,17 @@ StackClass::StackClass(QWidget *parent):QWidget(parent)
     stack->addWidget(allClassGroup);
     stack->addWidget(myClassGroup);
     //stack->addWidget(myClass);
-    //stack->addWidget(treeGroup);
-    stack->addWidget(tree);
+    stack->addWidget(treeGroup);
+    //stack->addWidget(tree);
 
     QGridLayout *leftLayout = new QGridLayout;
     leftLayout->addLayout(hLayout,0,0);
     leftLayout->addWidget(stack,1,0);
     //leftLayout->addLayout(vLayout,1,0);
 
-    mainlayout->addLayout(leftLayout,0,0);
-    mainlayout->addLayout(rightLayout,0,1);
+    mainlayout->addLayout(leftLayout,0,0,0,8);
+    mainlayout->addLayout(middleLayout,0,8,0,1);
+    mainlayout->addLayout(rightLayout,0,9,0,4);
 
     QObject::connect(allClassButton, SIGNAL(clicked()),
                      this, SLOT(changeToAllStack()));
@@ -157,13 +163,13 @@ void StackClass::showMyClassGroup()
 
 void StackClass::showTreeGroup()
 {
-    treeGroup = new QGroupBox(tr("树形图"));
-    //treeGroup = new QGroupBox();
+    //treeGroup = new QGroupBox(tr("树形图"));
+    treeGroup = new QGroupBox();
     tree = new TreeCourse;
 
-    QHBoxLayout *layout = new QHBoxLayout;
+    QVBoxLayout *layout = new QVBoxLayout;
     layout->addWidget(tree);
-    myClassGroup->setLayout(layout);
+    treeGroup->setLayout(layout);
 }
 
 void StackClass::changeToAllStack()

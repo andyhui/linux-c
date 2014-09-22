@@ -12,6 +12,7 @@
 #include "AllClass.h"
 #include "MyClass.h"
 #include "TreeView.h"
+#include "MsgWindows.h"
 
 class StackClass :public QWidget{
     Q_OBJECT
@@ -72,6 +73,7 @@ private:
     AllClass *allClass;
     MyClass *myClass;
     TreeCourse *tree;
+    MsgWindows *msgW;
 
     QStackedWidget *stack;
 

@@ -19,6 +19,9 @@
 #include <QStackedWidget>
 #include "StackClass.h"
 #include "curriculum.h"
+#include "AllClass.h"
+#include "curriculum.h"
+#include "MsgWindows.h"
 
 class MainWindow:public QMainWindow
 {
@@ -60,13 +63,16 @@ private:
     QAction *aboutAct;
     QAction *aboutQtAct;
 
+    /*
     QPushButton *course;
     QPushButton *courseTable;
     QPushButton *chooseCourse;
     QPushButton *communicate;
-    QPushButton *setting;
+    QPushButton *setting;*/
 
     QStackedWidget *stack;
+    QListWidget *list;
+    //MsgWindows *msgW;
 
 };
 

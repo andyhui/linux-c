@@ -1,8 +1,6 @@
 #include <QtGui>
 #include <QSizePolicy>
 #include "mainwindow.h"
-#include "AllClass.h"
-#include "curriculum.h"
 
 MainWindow::MainWindow()
 {
@@ -19,7 +17,8 @@ MainWindow::MainWindow()
 
     stack = new QStackedWidget;
 
-    QListWidget *list = new QListWidget;
+    list = new QListWidget;
+    //msgW = new MsgWindows;
     list->insertItem(0,QObject::tr("课程"));
     list->insertItem(1,QObject::tr("课程表"));
     //list->addItem(QObject::tr("课程填报"));
@@ -50,9 +49,11 @@ MainWindow::MainWindow()
     stack->addWidget(classGroupBox);
     stack->addWidget(curriculumGroupBox);
 
-    mainLayout->addWidget(list);
+    mainLayout->addWidget(list,0,0);
     //mainLayout->addLayout(vChooseMenu,0,0);
-    mainLayout->addWidget(stack,0,Qt::AlignHCenter);
+    //mainLayout->addWidget(stack,0,Qt::AlignHCenter);
+    mainLayout->addWidget(stack,0,1);
+    //mainLayout->addWidget(msgW,0,2);
 
     centralWidget->setLayout(mainLayout);
 
