@@ -1,6 +1,6 @@
 #include "TreeView.h"
 
-TreeCourse::TreeCourse(QTreeWidget *parent):QTreeWidget(parent)
+TreeCourse::TreeCourse(QWidget *parent):QWidget(parent)
 {
     tree = new QTreeWidget;
     tree->setColumnCount(1);

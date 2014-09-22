@@ -2,13 +2,14 @@
 #define TREEVIEW_H
 
 #include <QTreeWidget>
+#include <QWidget>
 #include <QHBoxLayout>
 
-class TreeCourse:public QTreeWidget
+class TreeCourse:public QWidget
 {
     Q_OBJECT
 public:
-    TreeCourse(QTreeWidget *parent = 0);
+    TreeCourse(QWidget *parent = 0);
 
 private:
     QTreeWidget *tree;
