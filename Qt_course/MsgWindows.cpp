@@ -2,6 +2,7 @@
 
 MsgWindows::MsgWindows(QWidget *parent):QWidget(parent)
 {
+    histogramItem = new Histogram;
 
     stateIcon = new QLabel(QObject::trUtf8("小图片"));
     stateLabel = new QLabel(QObject::trUtf8("状态"));

@@ -6,6 +6,7 @@
 #include <QStackedWidget>
 #include <QPushButton>
 #include <QGridLayout>
+#include "Histogram.h"
 
 class MsgWindows:public QWidget
 {
@@ -26,6 +27,8 @@ private:
     QPushButton *introButton;
     QPushButton *chartButton;
     QPushButton *marksButton;
+
+    Histogram *histogramItem;
 
 
 public slots:
