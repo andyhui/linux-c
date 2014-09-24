@@ -2,7 +2,8 @@
 
 MsgWindows::MsgWindows(QWidget *parent):QWidget(parent)
 {
-    histogramItem = new Histogram;
+    //histogramItem = new Histogram;
+    m_pDiagramViews = new DiagramViews( this );
 
     //histogramItem->Paint();
 
@@ -60,6 +61,7 @@ MsgWindows::MsgWindows(QWidget *parent):QWidget(parent)
     //headArea->addWidget(introDuction,1,2,2,2);
 
     content = new QStackedWidget;
+    content->addWidget(m_pDiagramViews);
 
     introButton = new QPushButton(QObject::tr("简介"));
     chartButton = new QPushButton(QObject::tr("统计图"));
