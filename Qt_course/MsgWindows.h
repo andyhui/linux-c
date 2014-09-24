@@ -24,6 +24,7 @@ private:
 
     QStackedWidget *content;
 
+
     QPushButton *introButton;
     QPushButton *chartButton;
     QPushButton *marksButton;
