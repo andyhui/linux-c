@@ -1,38 +1,61 @@
-#include "mainwindow.h"
+#include <stdio.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
 #include <QApplication>
-#include <QSplitter>
-#include <QListWidget>
-//#include <QObject>
+#include <QMessageBox>
+#include "logindialog.h"
+#include "mainwindow.h"
+
+void PrintWarning(QString str)
+{
+    QMessageBox::warning(NULL, "警告", str);
+}
 
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
-    //QTextCodec::setCodecForTr(QTextCodec::codecForName("UTF-8"));
-    MainWindow mainWin;
-#if defined(Q_OS_SYMBIAN)
-    mainWin.showMaximized();
-#else
-    mainWin.show();
-#endif
+
+    int sock;
+    struct sockaddr_in echoServAddr;
+    unsigned short echoServPort = 8977;
+    const char* servIP = "127.0.0.1";
 
 
-    return a.exec();
-/*
-    Course w;
-    w.show();
-    QSplitter *splitter = new QSplitter(Qt::Horizontal);
-    QListWidget *list = new QListWidget;
-    list->addItem(QObject::tr("administartor"));
-    list->addItem(QObject::tr("teacher"));
-    list->addItem(QObject::tr("student"));
-    splitter->addWidget(list);
-    Course *course = new Course;
-    splitter->addWidget(course);
-    splitter->setOpaqueResize(true);
-    splitter->show();
-    splitter->setWindowTitle(QObject::tr("Change User Info"));
+    if ((sock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0)
+    {
+        PrintWarning("socket() failed");
+        return(1);
+    }
 
-    QObject::connect(list,SIGNAL(currentRowChanged(int)),course->stack,SLOT(setCurrentIndex(int)));
-*/
+    memset(&echoServAddr, 0, sizeof(echoServAddr));
+    echoServAddr.sin_family      = AF_INET;
+    echoServAddr.sin_addr.s_addr = inet_addr(servIP);
+    echoServAddr.sin_port        = htons(echoServPort);
 
+    if (connect(sock, (struct sockaddr *) &echoServAddr,
+            sizeof(echoServAddr)) < 0)
+    {
+         PrintWarning("connect() failed");
+         return(1);
+    }
+
+    LoginDialog loginDialog;
+    loginDialog.mysock = sock;
+    if(loginDialog.exec()==QDialog::Accepted)
+    {
+        MainWindow w;
+        w.show();
+        int rslt = a.exec();
+        close(sock);
+        return rslt;
+    }
+    else
+    {
+        close(sock);
+        return 0;
+    }
 }
