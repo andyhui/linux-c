@@ -38,20 +38,6 @@ KCFLAGS_MIPS=-Wall -mips2 -O2 -fno-pic -mno-abicalls -mlong-calls -G0 -msoft-flo
 .PHONY: clean clean-2.4 clean-2.6 indent default
 
 # Check for kernel version
-#ifeq ($(PATCHLEVEL),6)
-#if kernel 3.5.0
-#ifeq ($(PATCHLEVEL),5)
-#if kernel 3.12.17
-
-#ifeq ($(PATCHLEVEL),4)
- #Assume kernel 2.4
-#default: kaodv.o
-#clean: clean-2.4
-#else
-#default: kaodv.ko
-#clean: clean-2.6
-#endif
-
 ifneq ( ,$(findstring $(PATCHLEVEL),6_12))
 default: kaodv.ko
 clean: clean-2.6
