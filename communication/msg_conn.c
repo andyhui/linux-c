@@ -320,7 +320,7 @@ static int send_file(struct in_addr serv_ip,unsigned short serv_port)
 int main(int argc,char *argv[])
 {
     char *serv_ip = (char *)malloc(sizeof(char)*16);
-    if(2 != argc)
+    if(3 != argc)
     {
         fprintf(stderr,"Usage: <Server Port>\n");
         exit(1);
