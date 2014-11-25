@@ -12,10 +12,11 @@
 #include <wait.h>
 #include <errno.h>
 #include <sys/select.h>
+#include <pthread.h>
 
 
 #define MAXPENDING 5
-#define PORT 9999
+//#define PORT 9999
 #define DEBUG 1
 
 #define max(a,b) a>b?a:b
@@ -24,6 +25,12 @@ void HandleTCPClient(int clntSocket);
 
 void HandleUDPClient(int udp_sock);
 
+void *thread_main(void *arg);
+
+struct ThreadArgs
+{
+    int clntSock;
+};
 
 static void sig_chld(int signo)
 {
@@ -40,6 +47,9 @@ static void sig_chld(int signo)
 
 static int process_broacast(int servport)
 {
+
+    //线程id
+    pthread_t tid;
     int udp_sock,listenfd,connfd,maxfdp1,nready;
     pid_t childpid;
 
@@ -78,7 +88,7 @@ static int process_broacast(int servport)
     }
 
 
-    if((udp_sock = socket(AF_INET,SOCK_DGRAM,0)) < 0)//建立socket
+    if((udp_sock = socket(AF_INET,SOCK_DGRAM,0)) < 0)//建立UDP socket
     {
         printf("create socket error! \t\n");
         exit(-1);
@@ -121,6 +131,8 @@ static int process_broacast(int servport)
 
     maxfdp1 = max(listenfd,udp_sock) + 1;
 
+
+
     for(;;)
     {
         FD_SET(listenfd,&rset);
@@ -147,7 +159,24 @@ static int process_broacast(int servport)
                 exit(1);
             }
 
-            if(0==(childpid = fork()))
+            //using pthread method
+            struct ThreadArgs *threadArgs;
+            //malloc threadArgs
+            if((threadArgs = (struct ThreadArgs*)malloc(sizeof(struct ThreadArgs))) == NULL){
+                fprintf(stderr,"malloc threadArgs error!\n");
+                exit(1);
+            }
+            threadArgs->clntSock = connfd;
+            //create threads
+            if(pthread_create(&tid,NULL,thread_main,(void *)threadArgs)){
+                fprintf(stderr,"create thread error.\n");
+                exit(1);
+            }
+            printf("with thread %ld\n",(long int)tid);
+
+            //using process method
+            /*
+            if(0==(childpid = fork()))//子进程处理tcp，发送接收数据处理
             {
                 close(listenfd);
 
@@ -159,15 +188,26 @@ static int process_broacast(int servport)
 
             }
             close(connfd);
+            */
         }
 
-        if(FD_ISSET(udp_sock,&rset))
+        if(FD_ISSET(udp_sock,&rset))//处理UDP广播连接
         {
             HandleUDPClient(udp_sock);
         }
 
     }
     exit(0);
+}
+
+void *thread_main(void *threadArgs)
+{
+    int clntsock;
+    pthread_detach(pthread_self());
+    clntsock = ((struct ThreadArgs*)threadArgs)->clntSock;
+    free(threadArgs);
+    HandleTCPClient(clntsock);
+    return (NULL);
 }
 
 static int process_tcp(unsigned short servPort)
@@ -182,7 +222,8 @@ static int process_tcp(unsigned short servPort)
 
     if((servSock = socket(PF_INET,SOCK_STREAM,IPPROTO_TCP)) < 0)
     {
-        fprintf(stderr,"create socket error \n");
+        fprintf(stderr,"create socket error\n");
+        exit(1);
     }
 
     memset(&servAddr,0,sizeof(servAddr));
